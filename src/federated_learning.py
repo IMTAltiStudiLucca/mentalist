@@ -702,9 +702,9 @@ class Client:
 
     def get_distance(self, norm='fro'):
         if self.network_type == 'NN':
-            self.get_distance_nn(norm)
+            return self.get_distance_nn(norm)
         elif self.network_type == 'CNN':
-            self.get_distance_cnn(norm)
+            return self.get_distance_cnn(norm)
 
     def predict(self, data):
         self.model.eval()
