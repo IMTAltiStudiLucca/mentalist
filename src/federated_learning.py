@@ -698,6 +698,7 @@ class Client:
             c_avg_distance = c_avg_distance / 3
 
             self.distance = c_avg_distance
+            return self.distance
 
     def get_distance(self, norm='fro'):
         if self.network_type == 'NN':
