@@ -21,6 +21,7 @@ import gzip
 import torch
 import math
 import torch.nn.functional as F
+from torch import linalg as LA
 from torch import nn
 from torch import optim
 import torchvision
@@ -688,12 +689,12 @@ class Client:
             c_avg_distance = 0
 
             # 2. check the client with the largest average distance w.r.t. the current global model
-            c_avg_distance += np.linalg.norm(current_server_cnn1 -
-                                             self.model.cnn1.weight.data, ord=norm)
-            c_avg_distance += np.linalg.norm(current_server_cnn2 -
-                                             self.model.cnn2.weight.data, ord=norm)
-            c_avg_distance += np.linalg.norm(current_server_fc1 -
-                                             self.model.fc1.weight.data, ord=norm)
+            c_avg_distance += LA.norm(current_server_cnn1 -
+                                             self.model.cnn1.weight.data)
+            c_avg_distance += LA.norm(current_server_cnn2 -
+                                             self.model.cnn2.weight.data)
+            c_avg_distance += LA.norm(current_server_fc1 -
+                                             self.model.fc1.weight.data)
 
             c_avg_distance = c_avg_distance / 3
 
