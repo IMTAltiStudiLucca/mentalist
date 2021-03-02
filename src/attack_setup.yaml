@@ -16,8 +16,9 @@ setup:
   network_type: 'NN'
   save_tests: 1
   tests_dir: './tests'
+  pattern: '1101000110'
   n_channels: 1
   n_bits: 100
-  frame_size: 10
+  frame_size: 6
   n_Rcal: 1
   n_train_offset: 1

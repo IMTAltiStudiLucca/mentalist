@@ -36,8 +36,9 @@ BATCH_SIZE = 32
 NSELECTION = 3
 DELTA_PLT_X = 1
 DELTA_PLT_Y = 1
+SENDER_BATCH_SIZE = 1
 
-ANOMALY_THRESHOLD = 0.3
+ANOMALY_THRESHOLD = 0.03
 
 font = {'family': 'serif',
         'color': 'darkred',
@@ -198,20 +199,23 @@ class Sender(Client):
                     logging.error("Sender: unsupported network type")
 
                 train_ds = TensorDataset(x_train_reshaped, torch.from_numpy(numpy.array([y_train_trans])))
-                train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE)
+                train_dl = DataLoader(train_ds, batch_size=SENDER_BATCH_SIZE)
 
                 # bias testing dataset
                 test_ds = TensorDataset(x_train_reshaped, torch.from_numpy(numpy.array([y_train_trans])))
-                test_dl = DataLoader(test_ds, batch_size=BATCH_SIZE)
+                test_dl = DataLoader(test_ds, batch_size=SENDER_BATCH_SIZE)
 
                 dist = self.get_distance()
-                logging.info("Anomaly distance %s", dist)
+                logging.info("Sender: Anomaly distance %s", dist)
+                log_event("Sender: Anomaly distance " + str(dist))
 
-                for epoch in range(n_of_epoch) and dist < ANOMALY_THRESHOLD:
-                    train_loss, train_accuracy = self.train(train_dl)
-                    test_loss, test_accuracy = self.validation(test_dl)
-                    dist = get_distance()
-                    logging.info("Anomaly distance %s", dist)
+                for epoch in range(n_of_epoch):
+                    if dist < ANOMALY_THRESHOLD:
+                        train_loss, train_accuracy = self.train(train_dl)
+                        test_loss, test_accuracy = self.validation(test_dl)
+                        dist = self.get_distance()
+                        logging.info("Sender: Anomaly distance %s", dist)
+                        log_event("Sender: Anomaly distance " + str(dist))
 
             elif self.bit[c] == 0 and not self.frame_start[c] == pred:
                 logging.info("Sender: channel %s restoring %s", c, self.frame_start[c])
@@ -236,20 +240,24 @@ class Sender(Client):
                     logging.error("Sender: unsupported network type")
 
                 train_ds = TensorDataset(x_train_reshaped, torch.from_numpy(numpy.array([y_train_trans])))
-                train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE)
+                train_dl = DataLoader(train_ds, batch_size=SENDER_BATCH_SIZE)
 
                 # bias testing dataset
                 test_ds = TensorDataset(x_train_reshaped, torch.from_numpy(numpy.array([y_train_trans])))
-                test_dl = DataLoader(test_ds, batch_size=BATCH_SIZE)
+                test_dl = DataLoader(test_ds, batch_size=SENDER_BATCH_SIZE)
 
                 dist = self.get_distance()
-                logging.info("Anomaly distance %s", dist)
+                logging.info("Sender: Anomaly distance %s", dist)
+                log_event("Sender: Anomaly distance " + str(dist))
 
-                for epoch in range(n_of_epoch) and dist < ANOMALY_THRESHOLD:
-                    train_loss, train_accuracy = self.train(train_dl)
-                    test_loss, test_accuracy = self.validation(test_dl)
-                    dist = self.get_distance()
-                    logging.info("Anomaly distance %s", dist)
+                for epoch in range(n_of_epoch):
+                    if dist < ANOMALY_THRESHOLD:
+                        train_loss, train_accuracy = self.train(train_dl)
+                        test_loss, test_accuracy = self.validation(test_dl)
+                        dist = self.get_distance()
+                        logging.info("Sender: Anomaly distance %s", dist)
+                        log_event("Sender: Anomaly distance " + str(dist))
+
             else:
                 logging.info("Sender: channel already set")
 
