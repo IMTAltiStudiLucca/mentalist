@@ -36,9 +36,6 @@ BATCH_SIZE = 32
 NSELECTION = 3
 DELTA_PLT_X = 1
 DELTA_PLT_Y = 1
-SENDER_BATCH_SIZE = 1
-
-ANOMALY_THRESHOLD = 0.03
 
 font = {'family': 'serif',
         'color': 'darkred',
@@ -199,23 +196,15 @@ class Sender(Client):
                     logging.error("Sender: unsupported network type")
 
                 train_ds = TensorDataset(x_train_reshaped, torch.from_numpy(numpy.array([y_train_trans])))
-                train_dl = DataLoader(train_ds, batch_size=SENDER_BATCH_SIZE)
+                train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE)
 
                 # bias testing dataset
                 test_ds = TensorDataset(x_train_reshaped, torch.from_numpy(numpy.array([y_train_trans])))
-                test_dl = DataLoader(test_ds, batch_size=SENDER_BATCH_SIZE)
-
-                dist = self.get_distance()
-                logging.info("Sender: Anomaly distance %s", dist)
-                log_event("Sender: Anomaly distance " + str(dist))
+                test_dl = DataLoader(test_ds, batch_size=BATCH_SIZE)
 
                 for epoch in range(n_of_epoch):
-                    if dist < ANOMALY_THRESHOLD:
-                        train_loss, train_accuracy = self.train(train_dl)
-                        test_loss, test_accuracy = self.validation(test_dl)
-                        dist = self.get_distance()
-                        logging.info("Sender: Anomaly distance %s", dist)
-                        log_event("Sender: Anomaly distance " + str(dist))
+                    train_loss, train_accuracy = self.train(train_dl)
+                    test_loss, test_accuracy = self.validation(test_dl)
 
             elif self.bit[c] == 0 and not self.frame_start[c] == pred:
                 logging.info("Sender: channel %s restoring %s", c, self.frame_start[c])
@@ -240,24 +229,15 @@ class Sender(Client):
                     logging.error("Sender: unsupported network type")
 
                 train_ds = TensorDataset(x_train_reshaped, torch.from_numpy(numpy.array([y_train_trans])))
-                train_dl = DataLoader(train_ds, batch_size=SENDER_BATCH_SIZE)
+                train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE)
 
                 # bias testing dataset
                 test_ds = TensorDataset(x_train_reshaped, torch.from_numpy(numpy.array([y_train_trans])))
-                test_dl = DataLoader(test_ds, batch_size=SENDER_BATCH_SIZE)
-
-                dist = self.get_distance()
-                logging.info("Sender: Anomaly distance %s", dist)
-                log_event("Sender: Anomaly distance " + str(dist))
+                test_dl = DataLoader(test_ds, batch_size=BATCH_SIZE)
 
                 for epoch in range(n_of_epoch):
-                    if dist < ANOMALY_THRESHOLD:
-                        train_loss, train_accuracy = self.train(train_dl)
-                        test_loss, test_accuracy = self.validation(test_dl)
-                        dist = self.get_distance()
-                        logging.info("Sender: Anomaly distance %s", dist)
-                        log_event("Sender: Anomaly distance " + str(dist))
-
+                    train_loss, train_accuracy = self.train(train_dl)
+                    test_loss, test_accuracy = self.validation(test_dl)
             else:
                 logging.info("Sender: channel already set")
 
@@ -608,9 +588,9 @@ def main():
     logging.info("Attacker: ready to transmit with frame size %s", receiver.frame)
 
     # 6. create sender
-    sender = Sender(receiver.images, receiver.labels, receiver.n_channels, receiver.frame, setup_env.pattern, network_type=setup_env.network_type)
-    setup.add_clients(sender)
-    log_event('Sender added')
+    # sender = Sender(receiver.images, receiver.labels, receiver.n_channels, receiver.frame, setup_env.pattern, network_type=setup_env.network_type)
+    # setup.add_clients(sender)
+    # log_event('Sender added')
 
     observer.set_frame(receiver.frame)
     observer.set_sample(create_samples(receiver.images))
@@ -618,37 +598,37 @@ def main():
     # 7. perform channel calibration
 
     # 8. start transmitting
-    successful_transmissions = 0
-    error_rate = 0
+    # successful_transmissions = 0
+    # error_rate = 0
 
-    contingency_table_receiver = [[1,1],[1,1]]
-    contingency_table_sender = [[0,0],[0,0]]
-    logging.debug("Attacker: contingency table %s", contingency_table_receiver)
+    # contingency_table_receiver = [[1,1],[1,1]]
+    # contingency_table_sender = [[0,0],[0,0]]
+    # logging.debug("Attacker: contingency table %s", contingency_table_receiver)
 
     for r in range(NTRANS):
         logging.info("Attacker: starting transmission frame")
         setup.run(federated_runs=receiver.frame)
-        check, contingency_table_receiver, contingency_table_sender = check_transmission_success(sender, receiver, contingency_table_receiver, contingency_table_sender)
-        successful_transmissions += check
-        error_rate += (receiver.n_channels - check)
-        logging.info("Attacker: SUCCESS rate = %s/%s", check, receiver.n_channels)
+        # check, contingency_table_receiver, contingency_table_sender = check_transmission_success(sender, receiver, contingency_table_receiver, contingency_table_sender)
+        # successful_transmissions += check
+        # error_rate += (receiver.n_channels - check)
+        # logging.info("Attacker: SUCCESS rate = %s/%s", check, receiver.n_channels)
 
         log_event("Transmissions: " + str(r))
-        log_event("Successful Transmissions: " + str(successful_transmissions))
-        log_event("Errors:" + str(error_rate))
+        # log_event("Successful Transmissions: " + str(successful_transmissions))
+        # log_event("Errors:" + str(error_rate))
 
-    logging.info("ATTACK TERMINATED: %s/%s bits succesfully transimitted", successful_transmissions, (NTRANS*receiver.n_channels))
+    logging.info("ATTACK TERMINATED")
 
-    if(receiver.n_channels == 2):
-        logging.info("CONTINGENCY TABLE RECEIVER %s", contingency_table_receiver)
-        logging.info("CONTINGENCY TABLE SENDER %s", contingency_table_sender)
-        p_value = chi_squared_test(contingency_table_receiver)
-        logging.info("P-VALUE = %s", p_value)
-        log_event("CONTINGENCY TABLE " +str(contingency_table_receiver)+ " P-VALUE = " + str(p_value))
+    #if(receiver.n_channels == 2):
+    #    logging.info("CONTINGENCY TABLE RECEIVER %s", contingency_table_receiver)
+    #    logging.info("CONTINGENCY TABLE SENDER %s", contingency_table_sender)
+    #    p_value = chi_squared_test(contingency_table_receiver)
+    #    logging.info("P-VALUE = %s", p_value)
+    #    log_event("CONTINGENCY TABLE " +str(contingency_table_receiver)+ " P-VALUE = " + str(p_value))
 
-    log_event("FINAL SUCCESSFUL TRANSMISSIONS: " + str(successful_transmissions) )
-    log_event("FINAL ERROR: " + str(error_rate))
-    log_event("ERROR RATE: " + str(error_rate))
+    #log_event("FINAL SUCCESSFUL TRANSMISSIONS: " + str(successful_transmissions) )
+    #log_event("FINAL ERROR: " + str(error_rate))
+    #log_event("ERROR RATE: " + str(error_rate))
 
     sdf = pandas.DataFrame(score_dict)
     # logging.info("CSV NAME: %s", os.path.join(setup_env.path, SCORE_LOG))

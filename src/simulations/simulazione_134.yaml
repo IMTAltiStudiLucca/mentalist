@@ -1,5 +1,3 @@
-saved:
-  timestamp: '202101100137' # for NN
 setup:
   data_path: ""
   n_clients: 10
@@ -13,12 +11,11 @@ setup:
   save_dir : './runs'
   to_save: 0
   multiprocessing: 0
-  network_type: 'NN'
+  network_type: 'CNN'
   save_tests: 1
   tests_dir: './tests'
-  pattern: '0101001110'
-  n_channels: 1
-  n_bits: 10
-  frame_size: 8
+  n_channels: 0
+  n_bits: 100
+  frame_size: 6
   n_Rcal: 1
   n_train_offset: 1
