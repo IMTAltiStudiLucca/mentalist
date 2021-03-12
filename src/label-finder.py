@@ -21,7 +21,7 @@ import subprocess
 
 SEARCH_THREASHOLD = 1 / (28 * 28)
 MNIST_SIZE = 60000
-SAMPLES = 6000
+SAMPLES = 600
 ALPHA = 0.5
 
 
@@ -60,7 +60,7 @@ class Finder(Client):
 
         fh,fv = 0,0
         for x in range(SAMPLES):
-            print("Processing: {:.2%}".format(x/SAMPLES), end="\r", flush=True)
+            print("Processing: {:.2%}".format(x/SAMPLES)) #, end="\r", flush=True)
             ih,iv = self.craft(i[x],j[x])
             fh += ih
             fv += iv
@@ -247,5 +247,5 @@ def main():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(format='[+] %(asctime)s %(levelname)s: %(message)s', level=logging.WARNING)
+    logging.basicConfig(format='[+] %(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
     main()
