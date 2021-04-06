@@ -18,7 +18,7 @@ setup:
   save_tests: 1
   tests_dir: './tests'
   n_channels: 1
-  patter: '0'
+  patter: '1'
   n_bits: 100
   frame_size: 12
   n_Rcal: 1
