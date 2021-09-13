@@ -42,10 +42,30 @@ def alphaH(im, frm, to):
 
     return im
 
-if __name__ == "__main__":
-    im = Image.open('test.jpg')
-    im2 = alphaH(im, 0.3, 0.7)
-    im2.show()
-    #im2.save('birdfade.png')
+def overlay(bim, fim):
+    return Image.alpha_composite(bim, fim)
 
-    pass
+def alphaVmix(im1, im2, alpha):
+    im2.putalpha(255)
+    alphaV(im1, alpha/2, alpha)
+    return overlay(im2,im1)
+
+def alphaHmix(im1, im2, alpha):
+    im2.putalpha(255)
+    alphaH(im1, alpha/2, alpha)
+    return overlay(im2,im1)
+
+def removeAlpha(img):
+    noalpha = Image.new("RGB", img.size, (255, 255, 255))
+    noalpha.paste(img, mask=img.split()[3]) # 3 is the alpha channel
+    return noalpha
+
+
+if __name__ == "__main__":
+    im1 = Image.open('bird.jpg')
+    im2 = Image.open('ship.jpg')
+
+    im3 = alphaVmix(im2,im1,0.7)
+    #im3.show()
+
+    removeAlpha(im3).save('foo.jpg', 'JPEG', quality=80)
