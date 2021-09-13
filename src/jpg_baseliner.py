@@ -32,19 +32,19 @@ def alphaH(im, frm, to):
     im.putalpha(255)
 
     pixels = im.load()
-    for y in range(int(height*frm), int(height*to)):
-        alpha = 255-int((y - height*frm)/height/(to - frm) * 255)
-        for x in range(width):
+    for x in range(int(width*frm), int(width*to)):
+        alpha = 255-int((x - width*frm)/width/(to - frm) * 255)
+        for y in range(height):
             pixels[x, y] = pixels[x, y][:3] + (alpha,)
-    for y in range(y, height):
-        for x in range(width):
+    for x in range(x, width):
+        for y in range(height):
             pixels[x, y] = pixels[x, y][:3] + (0,)
 
     return im
 
 if __name__ == "__main__":
     im = Image.open('test.jpg')
-    im2 = alphaV(im, 0.3, 0.7)
+    im2 = alphaH(im, 0.3, 0.7)
     im2.show()
     #im2.save('birdfade.png')
 
