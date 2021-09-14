@@ -12,6 +12,7 @@ from matplotlib import pyplot
 import logging
 
 from keras.datasets import mnist
+from keras.datasets import cifar10
 
 from pathlib import Path
 import requests
@@ -38,7 +39,7 @@ import os
 import argparse
 
 import multiprocessing as mp
-
+from keras.datasets import cifar10
 
 def worker(c, num_of_epochs):
     logging.debug("Launching training for client: {}".format(c.id))
@@ -46,11 +47,13 @@ def worker(c, num_of_epochs):
 
 
 class Net2nn(nn.Module):
-    def __init__(self):
+    def __init__(self, input_size, n_classes):
         super(Net2nn, self).__init__()
-        self.fc1 = nn.Linear(784, 200)
+        self.input_size = input_size
+        self.n_classes = n_classes
+        self.fc1 = nn.Linear(input_size, 200)
         self.fc2 = nn.Linear(200, 200)
-        self.fc3 = nn.Linear(200, 10)
+        self.fc3 = nn.Linear(200, n_classes)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
@@ -59,7 +62,7 @@ class Net2nn(nn.Module):
         return x
 
     def clone(self):
-        model_clone = Net2nn()
+        model_clone = Net2nn(self.input_size, self.n_classes)
         model_clone.fc1.weight.data = self.fc1.weight.data.clone()
         model_clone.fc2.weight.data = self.fc2.weight.data.clone()
         model_clone.fc3.weight.data = self.fc3.weight.data.clone()
@@ -70,11 +73,15 @@ class Net2nn(nn.Module):
 
 
 class CNN(nn.Module):
-    def __init__(self):
+    def __init__(self, rgb_channels, n_classes, dataset):
         super(CNN, self).__init__()
 
+        self.rgb_channels = rgb_channels
+        self.n_classes = n_classes
+        self.dataset = dataset
+
         # Convolution 1
-        self.cnn1 = nn.Conv2d(in_channels=1, out_channels=16,
+        self.cnn1 = nn.Conv2d(in_channels=rgb_channels, out_channels=16,
                               kernel_size=3, stride=1, padding=0)
         self.relu1 = nn.ReLU()
 
@@ -90,29 +97,65 @@ class CNN(nn.Module):
         self.maxpool2 = nn.MaxPool2d(kernel_size=2)
 
         # Fully connected 1
-        self.fc1 = nn.Linear(32 * 5 * 5, 10)
+        if dataset == 'mnist':
+            self.fc1 = nn.Linear(32 * 5 * 5, n_classes)
+        elif dataset == 'cifar':
+            self.fc1 = nn.Linear(32 * 6 * 6, n_classes)
 
-    def forward(self, x):
+    def forward(self, x, to_print=False):
         # Set 1
+        if to_print:
+            print('INPUT', x.shape)
         out = self.cnn1(x)
+        if to_print:
+            print('CNN1', out.shape)
         out = self.relu1(out)
         out = self.maxpool1(out)
+        if to_print:
+            print('MAXPOOL1', out.shape)
 
         # Set 2
         out = self.cnn2(out)
-        out = self.relu2(out)
-        out = self.maxpool2(out)
+        if to_print:
+            print('CNN2', out.shape)
 
+        out = self.relu2(out)
+
+        out = self.maxpool2(out)
+        if to_print:
+            print("after the 2nd maxpool:{} ".format(out.shape))
         # Flatten
         out = out.view(out.size(0), -1)
-
-        # Dense
+        if to_print:
+            print("after the flatten:{} ".format(out.shape))
         out = self.fc1(out)
-
+        if to_print:
+            print('FINAL', out.shape)
         return out
 
+
+#     def forward(self, x):
+#         # Set 1
+#         out = self.cnn1(x)
+#         out = self.relu1(out)
+#         out = self.maxpool1(out)
+
+#         # Set 2
+#         out = self.cnn2(out)
+#         out = self.relu2(out)
+#         out = self.maxpool2(out)
+
+#         # Flatten
+#         out = out.view(out.size(0), -1)
+
+#         # Dense
+#         out = self.fc1(out)
+
+#         return out
+
+
     def clone(self):
-        model_clone = CNN()
+        model_clone = CNN(self.rgb_channels, self.n_classes, self.dataset)
         model_clone.cnn1.weight.data = self.cnn1.weight.data.clone()
         model_clone.cnn2.weight.data = self.cnn2.weight.data.clone()
         model_clone.fc1.weight.data = self.fc1.weight.data.clone()
@@ -144,6 +187,8 @@ class Setup:
         self.multiprocessing = self.settings['setup']['multiprocessing']
         self.to_save = self.settings['setup']['to_save']
         self.network_type = self.settings['setup']['network_type']
+        self.dataset = self.settings['setup']['dataset']
+
         self.saved = False
 
         if "saved" not in self.settings.keys():
@@ -160,14 +205,15 @@ class Setup:
                       self.path, self.saved)
 
         self.list_of_clients = []
-        self.X_train, self.y_train, self.X_test, self.y_test = self.__load_dataset()
+        self.X_train, self.y_train, self.X_test, self.y_test, self.rgb_channels, self.height, self.width, self.n_classes = self.__load_dataset()
 
         self.create_clients()
 
         self.server = Server(self.list_of_clients, self.random_clients,
                              self.learning_rate, self.num_of_epochs,
                              self.batch_size, self.momentum,
-                             self.saved, self.path, self.multiprocessing, self.network_type)
+                             self.saved, self.path, self.multiprocessing, self.network_type, self.dataset,
+                             self.rgb_channels, self.height, self.width, self.n_classes)
 
     def load(self, conf_file):
         with open(conf_file) as f:
@@ -185,16 +231,38 @@ class Setup:
             self.server.send_weights()
 
     def __load_dataset(self):
-        (X_train, y_train), (X_test, y_test) = mnist.load_data()
-        X_train = X_train.reshape(X_train.shape[0], 784)
-        X_test = X_test.reshape(X_test.shape[0], 784)
+        X_train, y_train, X_test, y_test = None, None, None, None
+        if self.dataset == 'cifar':
+            (X_train, y_train), (X_test, y_test) = cifar10.load_data()
+        elif self.dataset == 'mnist':
+            (X_train, y_train), (X_test, y_test) = mnist.load_data()
+        else:
+            print('no dataset info loaded')
+        # flat the images as 1d feature vector.
+        # mnist 28x28x1 - cifar10 32x32x3
+        rgb_channels = 1
+        if len(X_train.shape) == 4:
+            rgb_channels = X_train.shape[-1]
+
+        height = X_train.shape[1]
+        width = X_train.shape[2]
+
+        classes = len(np.unique(y_train))
+
+#         X_train = X_train.reshape(X_train.shape[0], reduce((lambda x, y: x * y), list(X_train.shape)[1:]))
+#         X_test = X_test.reshape(X_test.shape[0], reduce((lambda x, y: x * y), list(X_train.shape)[1:]))
         X_train = X_train.astype('float32')
         X_test = X_test.astype('float32')
         # Original data is uint8 (0-255). Scale it to range [0,1].
         X_train /= 255
         X_test /= 255
 
-        return X_train, y_train, X_test, y_test
+        if y_test.shape != (len(y_test),):
+            y_test = y_test.reshape(len(y_test))
+        if y_train.shape != (len(y_train),):
+            y_train = y_train.reshape(len(y_train))
+
+        return X_train, y_train, X_test, y_test, rgb_channels, height, width, classes
 
     def __create_iid_datasets(self):
         # 1. randomly shuffle both train and test sets
@@ -216,8 +284,11 @@ class Setup:
             X_trains, y_trains, X_tests, y_tests = self.__create_non_iid_datasets()
 
         for i in range(self.n_clients):
-            c = Client(str(i), X_trains[i], y_trains[i], X_tests[i], y_tests[i], self.learning_rate,
-                       self.num_of_epochs, self.batch_size, self.momentum, self.saved, self.path, self.network_type)
+            c = Client(str(i), X_trains[i], y_trains[i], X_tests[i], y_tests[i],
+                       self.learning_rate, self.num_of_epochs, self.batch_size,
+                       self.momentum, self.saved, self.path, self.network_type, self.dataset,
+                       self.rgb_channels, self.height, self.width, self.n_classes
+                       )
             self.list_of_clients.append(c)
 
     def add_clients(self, client):
@@ -253,7 +324,7 @@ class Server:
                  learning_rate=0.01, num_of_epochs=10,
                  batch_size=32, momentum=0.9,
                  saved=False, path=None, multiprocessing=0,
-                 network_type='NN'):
+                 network_type='NN', dataset='mnist', rgb_channels=1, height=28, width=28, n_classes=10):
 
         self.list_of_clients = list_of_clients
         self.random_clients = random_clients
@@ -263,15 +334,21 @@ class Server:
         self.momentum = momentum
         self.multiprocessing = multiprocessing
         self.network_type = network_type
+        self.dataset = dataset
+
+        self.rgb_channels = rgb_channels
+        self.width = width
+        self.height = height
+        self.n_classes = n_classes
 
         self.current_anomalous_client = None
 
         self.selected_clients = []
         if self.network_type == 'NN':
-            self.main_model = Net2nn()
+            self.main_model = Net2nn(self.rgb_channels*self.width*self.height, self.n_classes)
         elif self.network_type == 'CNN':
             logging.info('network_type: {}'.format(self.network_type))
-            self.main_model = CNN()
+            self.main_model = CNN(self.rgb_channels, self.n_classes, self.dataset)
 
         if saved:
             self.main_model.load_state_dict(
@@ -499,10 +576,11 @@ class Server:
             self.main_model.fc1.bias.data = fc1_mean_bias.data.clone()
 
     def predict(self, data):
+        # to be fixed how to reshape the values
         self.main_model.eval()
         with torch.no_grad():
             if self.network_type == 'CNN':
-                data = data.reshape(-1, 1, 28, 28)
+                data = data.reshape(-1, self.rgb_channels, self.width, self.height)
             return self.main_model(data)
 
     def save_model(self, path):
@@ -527,7 +605,8 @@ class Client:
         '''
 
     def __init__(self, id, x_train, y_train, x_test, y_test, learning_rate=0.01,
-                 num_of_epochs=10, batch_size=32, momentum=0.9, saved=False, path=None, network_type='NN'):
+                 num_of_epochs=10, batch_size=32, momentum=0.9, saved=False,
+                 path=None, network_type='NN', dataset='mnist', rgb_channels=1, height=28, width=28, n_classes=10):
 
         logging.debug("Client: __init__()")
         self.id = "client_" + id
@@ -535,10 +614,18 @@ class Client:
         self.momentum = momentum
         self.batch_size = batch_size
         self.network_type = network_type
+        self.dataset = dataset
+        self.rgb_channels = rgb_channels
+        self.height = height
+        self.width = width
+        self.n_classes = n_classes
         self.main_model = None
         self.distance = 0
         # training and test can be splitted inside the client class
         # now we are passing them while instantiate the class
+
+        logging.debug('{} {} {} {}'.format(self.rgb_channels,
+                                           self.height, self.width, self.n_classes))
 
         logging.debug("Client: x_train : %s = %s | y_train : %s = %s", type(
             x_train), x_train.shape, type(y_train), y_train.shape)
@@ -548,10 +635,20 @@ class Client:
         y_train = y_train.type(torch.LongTensor)
         y_test = y_test.type(torch.LongTensor)
 
-        if self.network_type == 'CNN':
+        # Adjust the shape of training and test for the proper net.
+
+        if self.network_type == 'CNN' and self.dataset == 'cifar':
+            # to be adjusted with cifar10 since the dimensions are different
+            x_train = x_train.permute(0, 3, 1, 2)
+            x_test = x_test.permute(0, 3, 1, 2)
+        elif self.network_type == 'CNN' and self.dataset == 'mnist':
             x_train = x_train.reshape(-1, 1, 28, 28)
             x_test = x_test.reshape(-1, 1, 28, 28)
+        elif self.network_type == 'NN':
+            x_train = x_train.reshape(-1, self.rgb_channels*self.width*self.height)
+            x_test = x_test.reshape(-1, self.rgb_channels*self.width*self.height)
 
+        print(x_train.shape, x_test.shape)
         self.x_train = x_train
         self.y_train = y_train
         self.x_test = x_test
@@ -559,9 +656,9 @@ class Client:
 
         self.model_name = "model" + self.id
         if self.network_type == 'NN':
-            self.model = Net2nn()
+            self.model = Net2nn(self.rgb_channels*self.width*self.height, self.n_classes)
         elif self.network_type == 'CNN':
-            self.model = CNN()
+            self.model = CNN(self.rgb_channels, self.n_classes, self.dataset)
 
         logging.debug("Client: %s | %s | %s", self.id, saved, path)
 
@@ -618,8 +715,8 @@ class Client:
 
             self.train_loss, self.train_accuracy = self.train(train_dl)
             self.test_loss, self.test_accuracy = self.validation(test_dl)
-            logging.debug("Client: {}".format(self.id) + " | epoch: {:3.0f}".format(epoch + 1) +
-                          " | train accuracy: {:7.5f}".format(self.train_accuracy) + " | test accuracy: {:7.5f}".format(self.test_accuracy))
+            logging.info("Client: {}".format(self.id) + " | epoch: {:3.0f}".format(epoch + 1) +
+                         " | train accuracy: {:7.5f}".format(self.train_accuracy) + " | test accuracy: {:7.5f}".format(self.test_accuracy))
 
     def train(self, train_dl):
         logging.debug("INSIDE THE TRAINING CLIENT {}".format(self.id))
@@ -690,11 +787,11 @@ class Client:
 
             # 2. check the client with the largest average distance w.r.t. the current global model
             c_avg_distance += LA.norm(current_server_cnn1 -
-                                             self.model.cnn1.weight.data)
+                                      self.model.cnn1.weight.data)
             c_avg_distance += LA.norm(current_server_cnn2 -
-                                             self.model.cnn2.weight.data)
+                                      self.model.cnn2.weight.data)
             c_avg_distance += LA.norm(current_server_fc1 -
-                                             self.model.fc1.weight.data)
+                                      self.model.fc1.weight.data)
 
             c_avg_distance = c_avg_distance / 3
 
@@ -710,9 +807,12 @@ class Client:
     def predict(self, data):
         self.model.eval()
         with torch.no_grad():
-            if self.network_type == 'CNN':
-                logging.debug("Client: predict CNN")
+            if self.network_type == 'CNN' and self.dataset == 'cifar':
+                data = data.permute(0, 3, 1, 2)
+            elif self.network_type == 'CNN' and self.dataset == 'mnist':
                 data = data.reshape(-1, 1, 28, 28)
+            elif self.network_type == 'NN':
+                data = data.reshape(-1, self.rgb_channels*self.width*self.height)
             return self.model(data)
 
     def save_model(self, path):
