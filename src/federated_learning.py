@@ -715,7 +715,7 @@ class Client:
 
             self.train_loss, self.train_accuracy = self.train(train_dl)
             self.test_loss, self.test_accuracy = self.validation(test_dl)
-            logging.info("Client: {}".format(self.id) + " | epoch: {:3.0f}".format(epoch + 1) +
+            logging.debug("Client: {}".format(self.id) + " | epoch: {:3.0f}".format(epoch + 1) +
                          " | train accuracy: {:7.5f}".format(self.train_accuracy) + " | test accuracy: {:7.5f}".format(self.test_accuracy))
 
     def train(self, train_dl):
