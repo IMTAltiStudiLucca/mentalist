@@ -668,7 +668,7 @@ class Client:
         self.train_loss = 1
         self.test_loss = 1
 
-    def reshape_dataset(x_train, x_test):
+    def reshape_dataset(self, x_train, x_test):
         if self.network_type == 'CNN' and self.dataset == 'cifar':
             # to be adjusted with cifar10 since the dimensions are different
             x_train = x_train.permute(0, 3, 1, 2)
