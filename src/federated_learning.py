@@ -637,18 +637,8 @@ class Client:
 
         # Adjust the shape of training and test for the proper net.
 
-        if self.network_type == 'CNN' and self.dataset == 'cifar':
-            # to be adjusted with cifar10 since the dimensions are different
-            x_train = x_train.permute(0, 3, 1, 2)
-            x_test = x_test.permute(0, 3, 1, 2)
-        elif self.network_type == 'CNN' and self.dataset == 'mnist':
-            x_train = x_train.reshape(-1, 1, 28, 28)
-            x_test = x_test.reshape(-1, 1, 28, 28)
-        elif self.network_type == 'NN':
-            x_train = x_train.reshape(-1, self.rgb_channels*self.width*self.height)
-            x_test = x_test.reshape(-1, self.rgb_channels*self.width*self.height)
+        x_train, x_test = self.reshape_dataset(x_train, x_test)
 
-        print(x_train.shape, x_test.shape)
         self.x_train = x_train
         self.y_train = y_train
         self.x_test = x_test
@@ -677,6 +667,20 @@ class Client:
         self.train_accuracy = 0
         self.train_loss = 1
         self.test_loss = 1
+
+    def reshape_dataset(x_train, x_test):
+        if self.network_type == 'CNN' and self.dataset == 'cifar':
+            # to be adjusted with cifar10 since the dimensions are different
+            x_train = x_train.permute(0, 3, 1, 2)
+            x_test = x_test.permute(0, 3, 1, 2)
+        elif self.network_type == 'CNN' and self.dataset == 'mnist':
+            x_train = x_train.reshape(-1, 1, 28, 28)
+            x_test = x_test.reshape(-1, 1, 28, 28)
+        elif self.network_type == 'NN':
+            x_train = x_train.reshape(-1, self.rgb_channels*self.width*self.height)
+            x_test = x_test.reshape(-1, self.rgb_channels*self.width*self.height)
+
+        return x_train, x_test
 
     def update_model_weights(self, main_model):
         self.main_model = main_model

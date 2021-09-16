@@ -12,6 +12,7 @@ import signal
 import pandas
 import sys
 import baseliner as bl
+import jpg_baseliner as jbl
 import random
 
 from chi_squared_test import chi_squared_test
@@ -25,8 +26,11 @@ import subprocess
 # something strange with RNG
 random.seed()
 
-SEARCH_THREASHOLD = 1 / (28 * 28)
+MNIST_SEARCH_THREASHOLD = 1 / (28 * 28)
 MNIST_SIZE = 60000
+
+CIFAR_SEARCH_THREASHOLD = 1 / (32 * 32)
+CIFAR_SIZE = 60000
 
 #NTRAIN = 1  # rounds of training
 #NTRANS = 10  # rounds for transmission tests
@@ -113,7 +117,7 @@ class ReceiverState(enum.Enum):
 
 class Sender(Client):
 
-    def __init__(self, images, labels, n_channels, frame, pattern, network_type):
+    def __init__(self, images, labels, n_channels, frame, pattern, network_type, dataset, rgb_channels, height, width):
         self.bit = [None]*n_channels
         self.n_channels = n_channels
         self.sent = False
@@ -129,7 +133,7 @@ class Sender(Client):
         y_train = numpy.array(labels)
         y_train = torch.from_numpy(y_train)
 
-        super().__init__("Sender", x_train, y_train, x_train, y_train, network_type=network_type)
+        super().__init__("Sender", x_train, y_train, x_train, y_train, network_type=network_type, dataset=dataset, rgb_channels=rgb_channel, height=height, width=width)
 
     # Covert channel send
     def call_training(self, n_of_epoch):
@@ -187,13 +191,15 @@ class Sender(Client):
                 logging.debug("Sender: x_train %s", self.x_train[c])
                 # bias injection dataset
 
-                x_train_reshaped = None
+                x_train_reshaped, = self.reshape_dataset(self.x_train[c], None)
+                """
                 if self.network_type == 'CNN':
                     x_train_reshaped = self.x_train[c].reshape(-1, 1, 28, 28)
                 elif self.network_type == 'NN':
                     x_train_reshaped = self.x_train[c].reshape(1,784)
                 else:
                     logging.error("Sender: unsupported network type")
+                """
 
                 train_ds = TensorDataset(x_train_reshaped, torch.from_numpy(numpy.array([y_train_trans])))
                 train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE)
@@ -220,13 +226,15 @@ class Sender(Client):
                 logging.debug("Sender: x_train %s", self.x_train[c])
                 # bias injection dataset
 
-                x_train_reshaped = None
+                x_train_reshaped, = self.reshape_dataset(self.x_train[c], None)
+                """
                 if self.network_type == 'CNN':
                     x_train_reshaped = self.x_train[c].reshape(-1, 1, 28, 28)
                 elif self.network_type == 'NN':
                     x_train_reshaped = self.x_train[c].reshape(1,784)
                 else:
                     logging.error("Sender: unsupported network type")
+                """
 
                 train_ds = TensorDataset(x_train_reshaped, torch.from_numpy(numpy.array([y_train_trans])))
                 train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE)
@@ -243,7 +251,7 @@ class Sender(Client):
 
 class Receiver(Client):
 
-    def __init__(self,n_channels,frame_size,network_type):
+    def __init__(self,n_channels,frame_size,network_type, dataset, rgb_channels, height, width):
         self.bit = [None]*n_channels
         self.n_channels = n_channels
         self.images = [None]*n_channels
@@ -257,7 +265,7 @@ class Receiver(Client):
         x_train = numpy.array([])
         y_train = numpy.array([])
         x_train = x_train.astype('float32')
-        super().__init__("Receiver", x_train, y_train, x_train, y_train,network_type=network_type)
+        super().__init__("Receiver", x_train, y_train, x_train, y_train,network_type=network_type, dataset=dataset, rgb_channels=rgb_channel, height=height, width=width)
 
     def call_training(self, n_of_epoch):
         logging.debug("Receiver: call_training()")
@@ -325,6 +333,15 @@ class Receiver(Client):
     def calibrate(self):
         self.frame += 1
 
+    def dataset_size():
+        if self.dataset == 'mnist':
+            return MNIST_SIZE
+        elif self.dataset == 'cifar':
+            return CIFAR_SIZE
+        else:
+            logging.error("Unsupported dataset %s", self.dataset)
+            return 0
+
     def craft(self):
 
         logging.info("Sender: crafting channel samples")
@@ -334,13 +351,27 @@ class Receiver(Client):
 
         while c < self.n_channels:
 
-            i = random.randint(0, MNIST_SIZE-1)
-            j = random.randint(0, MNIST_SIZE-1)
+            size = self.dataset_size()
+            c += self.search_edge_example(c)
 
-            logging.debug("Receiver: trying to craft from %s %s", i, j)
+        logging.info("Receiver: channels ready")
 
+        if self.frame < 1:
+            self.state = ReceiverState.Calibrating
+        else:
+            self.state = ReceiverState.Ready
+
+    def search_edge_example(self, c):
+
+        i = random.randint(0, size-1)
+        j = random.randint(0, size-1)
+
+        logging.debug("Receiver: trying to craft from %s %s", i, j)
+
+        if self.dataset == 'mnist':
             image_i = bl.linearize(bl.get_image(i))
             image_j = bl.linearize(bl.get_image(j))
+
             i_label = self.label_predict(create_sample(image_i))
 
             imageH = bl.hmix(image_i, image_j, ALPHA)
@@ -354,12 +385,9 @@ class Receiver(Client):
                 self.labels[c] = [y0_label, y1_label]
                 #allocated.append(y0_label)
                 #allocated.append(y1_label)
-                c += 1
+                return 1
             else:
                 logging.debug("Receiver: not found for (%s,%s)", i, j)
-
-            if c >= self.n_channels:
-                break
 
             imageV = bl.vmix(image_i, image_j, ALPHA)
             V_label = self.label_predict(create_sample(imageV))
@@ -372,51 +400,116 @@ class Receiver(Client):
                 self.labels[c] = [y0_label, y1_label]
                 #allocated.append(y0_label)
                 #allocated.append(y1_label)
-                c += 1
+                return 1
+            else:
+                logging.debug("Receiver: not found for (%s,%s)", i, j)
+            return 0
+
+        elif self.dataset == 'cifar':
+            image_i = jbl.linearize(jbl.get_image(i))
+            image_j = jbl.linearize(jbl.get_image(j))
+
+            i_label = self.label_predict(create_sample(image_i))
+
+            imageH = jbl.hmix(image_i, image_j, ALPHA)
+            H_label = self.label_predict(create_sample(imageH))
+
+            alpha, y0_label, y1_label = self.hsearch(image_i, image_j, i_label, H_label, 0, ALPHA)
+
+            if alpha > 0: # and not y0_label in allocated and not y1_label in allocated:
+                logging.info("Receiver: found hmix(%s, %s, %s) = %s | %s", i, j, alpha, y0_label, y1_label)
+                self.images[c] = jbl.hmix(image_i, image_j, alpha)
+                self.labels[c] = [y0_label, y1_label]
+                #allocated.append(y0_label)
+                #allocated.append(y1_label)
+                return 1
             else:
                 logging.debug("Receiver: not found for (%s,%s)", i, j)
 
-        logging.info("Receiver: channels ready")
+            imageV = jbl.vmix(image_i, image_j, ALPHA)
+            V_label = self.label_predict(create_sample(imageV))
 
-        if self.frame < 1:
-            self.state = ReceiverState.Calibrating
+            alpha, y0_label, y1_label = self.vsearch(image_i, image_j, i_label, V_label, 0, ALPHA)
+
+            if alpha > 0: # and not y0_label in allocated and not y1_label in allocated:
+                logging.info("Receiver: found vmix(%s, %s, %s) = %s | %s", i, j, alpha, y0_label, y1_label)
+                self.images[c] = jbl.vmix(image_i, image_j, alpha)
+                self.labels[c] = [y0_label, y1_label]
+                #allocated.append(y0_label)
+                #allocated.append(y1_label)
+                return 1
+            else:
+                logging.debug("Receiver: not found for (%s,%s)", i, j)
+            return 0
         else:
-            self.state = ReceiverState.Ready
+            logging.error("Unknown dataset %s", self.dataset)
+        return 0
 
     def hsearch(self, image_i, image_j, y0_label, y1_label, alpha_min, alpha_max):
 
         logging.debug("H-searching between %s and %s", y0_label, y1_label)
 
-        if y0_label == y1_label:
-            return -1,None,None
+        if self.dataset == 'mnist':
+            if y0_label == y1_label:
+                return -1,None,None
 
-        if alpha_max < alpha_min + SEARCH_THREASHOLD:
-            return alpha_min, y0_label, y1_label
+            if alpha_max < alpha_min + MNIST_SEARCH_THREASHOLD:
+                return alpha_min, y0_label, y1_label
 
-        imageM = bl.hmix(image_i, image_j, (alpha_min + alpha_max) / 2)
-        yM_label = self.label_predict(create_sample(imageM))
-        if y0_label != yM_label:
-            return self.hsearch(image_i, image_j, y0_label, yM_label, alpha_min, (alpha_min + alpha_max) / 2)
+            imageM = bl.hmix(image_i, image_j, (alpha_min + alpha_max) / 2)
+            yM_label = self.label_predict(create_sample(imageM))
+            if y0_label != yM_label:
+                return self.hsearch(image_i, image_j, y0_label, yM_label, alpha_min, (alpha_min + alpha_max) / 2)
+            else:
+                return self.hsearch(image_i, image_j, yM_label, y1_label, (alpha_min + alpha_max) / 2, alpha_max)
+        elif self.dataset == 'cifar':
+            if y0_label == y1_label:
+                return -1,None,None
+
+            if alpha_max < alpha_min + CIFAR_SEARCH_THREASHOLD:
+                return alpha_min, y0_label, y1_label
+
+            imageM = jbl.hmix(image_i, image_j, (alpha_min + alpha_max) / 2)
+            yM_label = self.label_predict(create_sample(imageM))
+            if y0_label != yM_label:
+                return self.hsearch(image_i, image_j, y0_label, yM_label, alpha_min, (alpha_min + alpha_max) / 2)
+            else:
+                return self.hsearch(image_i, image_j, yM_label, y1_label, (alpha_min + alpha_max) / 2, alpha_max)
         else:
-            return self.hsearch(image_i, image_j, yM_label, y1_label, (alpha_min + alpha_max) / 2, alpha_max)
+            logging.error("Unknown dataset %s", self.dataset)
 
     def vsearch(self, image_i, image_j, y0_label, y1_label, alpha_min, alpha_max):
 
         logging.debug("V-searching between %s and %s", y0_label, y1_label)
 
-        if y0_label == y1_label:
-            return -1,None,None
+        if self.dataset == 'mnist':
+            if y0_label == y1_label:
+                return -1,None,None
 
-        if alpha_max < alpha_min + SEARCH_THREASHOLD:
-            return alpha_min, y0_label, y1_label
+            if alpha_max < alpha_min + MNIST_SEARCH_THREASHOLD:
+                return alpha_min, y0_label, y1_label
 
-        imageM = bl.vmix(image_i, image_j, (alpha_min + alpha_max) / 2)
-        yM_label = self.label_predict(create_sample(imageM))
-        if y0_label != yM_label:
-            return self.vsearch(image_i, image_j, y0_label, yM_label, alpha_min, (alpha_min + alpha_max) / 2)
+            imageM = bl.vmix(image_i, image_j, (alpha_min + alpha_max) / 2)
+            yM_label = self.label_predict(create_sample(imageM))
+            if y0_label != yM_label:
+                return self.vsearch(image_i, image_j, y0_label, yM_label, alpha_min, (alpha_min + alpha_max) / 2)
+            else:
+                return self.vsearch(image_i, image_j, yM_label, y1_label, (alpha_min + alpha_max) / 2, alpha_max)
+        elif self.dataset == 'cifar':
+            if y0_label == y1_label:
+                return -1,None,None
+
+            if alpha_max < alpha_min + CIFAR_SEARCH_THREASHOLD:
+                return alpha_min, y0_label, y1_label
+
+            imageM = jbl.vmix(image_i, image_j, (alpha_min + alpha_max) / 2)
+            yM_label = self.label_predict(create_sample(imageM))
+            if y0_label != yM_label:
+                return self.vsearch(image_i, image_j, y0_label, yM_label, alpha_min, (alpha_min + alpha_max) / 2)
+            else:
+                return self.vsearch(image_i, image_j, yM_label, y1_label, (alpha_min + alpha_max) / 2, alpha_max)
         else:
-            return self.vsearch(image_i, image_j, yM_label, y1_label, (alpha_min + alpha_max) / 2, alpha_max)
-
+            logging.error("Unknown dataset %s", self.dataset)
 
 class Observer(Client):
 
@@ -496,6 +589,11 @@ class Setup_env:
             self.frame_size = self.settings['setup']['frame_size']
         else:
             self.frame_size = 0
+
+        if "dataset" in self.settings['setup'].keys():
+            self.dataset = self.settings['setup']['dataset']
+        else:
+            self.dataset = 'mnist'
 
         if "docker" in self.settings['setup'].keys():
             self.docker = self.settings['setup']['docker']

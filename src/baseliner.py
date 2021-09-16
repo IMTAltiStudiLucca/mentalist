@@ -156,22 +156,22 @@ def baseline_overlay_mask(image, mask, alpha=1):
 
     return new_image
 
-def squarize(list, width=28, height=28):
-    assert(len(list) == width * height)
-    matrix = []
-    for h in range(height):
-        row = []
-        for w in range(width):
-            row.append(list[(h * width) + w])
-        matrix.append(row)
-    return matrix
+def squarize(list, shape=(28,28)):
+    pi = 1
+    for d in shape:
+        pi *= d
+
+    assert(len(list) == d)
+    return list.reshape(shape)
 
 
 def linearize(matrix):
-    list = []
-    for i in range(len(matrix)):
-        list.extend(matrix[i])
-    return list
+
+    shape = matrix.shape
+    pi = 1
+    for d in shape:
+        pi *= d
+    return matrix.reshape(pi)
 
 def showcase(image):
     print("ORIGINAL")

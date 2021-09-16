@@ -1,6 +1,8 @@
 saved:
-  timestamp: '202101100137' # for NN
-  # timestamp: '202101271243' # for CNN
+#  timestamp: '202101271243' # MNIST CNN
+#  timestamp: '202101100137' # MNIST NN
+#  timestamp: '202109151000' # CIFAR CNN
+  timestamp: '202109151622' # CIFAR NN
 setup:
   data_path: ""
   n_clients: 10
@@ -8,18 +10,17 @@ setup:
   num_of_epochs: 10
   batch_size: 32
   momentum: 0.9
-  random_clients: 0.5
+  random_clients: 0.2
   n_of_federated_runs: 1
   federated_runs: 1
   save_dir : './runs'
   to_save: 0
+  dataset: 'cifar'
   multiprocessing: 0
   network_type: 'NN'
   save_tests: 1
   tests_dir: './tests'
-  n_channels: 1
-  n_bits: 100
-  pattern: "00001111"
-  frame_size: 7
+  n_bits: 10
   n_Rcal: 1
   n_train_offset: 1
+  docker: 0
