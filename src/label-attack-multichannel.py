@@ -133,7 +133,7 @@ class Sender(Client):
         y_train = numpy.array(labels)
         y_train = torch.from_numpy(y_train)
 
-        super().__init__("Sender", x_train, y_train, x_train, y_train, network_type=network_type, dataset=dataset, rgb_channels=rgb_channel, height=height, width=width)
+        super().__init__("Sender", x_train, y_train, x_train, y_train, network_type=network_type, dataset=dataset, rgb_channels=rgb_channels, height=height, width=width)
 
     # Covert channel send
     def call_training(self, n_of_epoch):
@@ -265,7 +265,7 @@ class Receiver(Client):
         x_train = numpy.array([])
         y_train = numpy.array([])
         x_train = x_train.astype('float32')
-        super().__init__("Receiver", x_train, y_train, x_train, y_train,network_type=network_type, dataset=dataset, rgb_channels=rgb_channel, height=height, width=width)
+        super().__init__("Receiver", x_train, y_train, x_train, y_train,network_type=network_type, dataset=dataset, rgb_channels=rgb_channels, height=height, width=width)
 
     def call_training(self, n_of_epoch):
         logging.debug("Receiver: call_training()")
@@ -333,7 +333,7 @@ class Receiver(Client):
     def calibrate(self):
         self.frame += 1
 
-    def dataset_size():
+    def dataset_size(self):
         if self.dataset == 'mnist':
             return MNIST_SIZE
         elif self.dataset == 'cifar':
@@ -352,7 +352,7 @@ class Receiver(Client):
         while c < self.n_channels:
 
             size = self.dataset_size()
-            c += self.search_edge_example(c)
+            c += self.search_edge_example(c, size)
 
         logging.info("Receiver: channels ready")
 
@@ -361,7 +361,7 @@ class Receiver(Client):
         else:
             self.state = ReceiverState.Ready
 
-    def search_edge_example(self, c):
+    def search_edge_example(self, c, size):
 
         i = random.randint(0, size-1)
         j = random.randint(0, size-1)
@@ -595,6 +595,17 @@ class Setup_env:
         else:
             self.dataset = 'mnist'
 
+        if self.dataset == 'mnist':
+            self.width = 28
+            self.height = 28
+            self.rgb_channels = 1
+        elif self.dataset == 'cifar':
+            self.width = 32
+            self.height = 32
+            self.rgb_channels = 3
+        else: 
+            logging.error('Dataset not implemented yet!')
+
         if "docker" in self.settings['setup'].keys():
             self.docker = self.settings['setup']['docker']
 
@@ -668,7 +679,9 @@ def main():
     # setup.load("...")
 
     # 4. create Receiver
-    receiver = Receiver(setup_env.n_channels,setup_env.frame_size,network_type=setup_env.network_type)
+    receiver = Receiver(setup_env.n_channels,setup_env.frame_size,network_type = setup_env.network_type,
+                         dataset=setup_env.dataset, rgb_channels = setup_env.rgb_channels, 
+                         height = setup_env.height, width = setup_env.width)
     setup.add_clients(receiver)
     log_event('Receiver added')
 
@@ -682,7 +695,10 @@ def main():
     logging.info("Attacker: ready to transmit with frame size %s", receiver.frame)
 
     # 6. create sender
-    sender = Sender(receiver.images, receiver.labels, receiver.n_channels, receiver.frame, setup_env.pattern, network_type=setup_env.network_type)
+    sender = Sender(receiver.images, receiver.labels, receiver.n_channels, receiver.frame, setup_env.pattern, network_type=setup_env.network_type,
+                    dataset=setup_env.dataset, rgb_channels = setup_env.rgb_channels, 
+                         height = setup_env.height, width = setup_env.width
+                    )
     setup.add_clients(sender)
     log_event('Sender added')
 

@@ -24,7 +24,7 @@ def alphaV(im, frm, to):
 
     return im
 
-# prograssive horizontal alpha fading from @frm% to @to%
+# prograssive horizsontal alpha fading from @frm% to @to%
 def alphaH(im, frm, to):
     assert to >= frm
     assert to > 0 and to <= 1
@@ -63,10 +63,28 @@ def removeAlpha(img):
     return noalpha
 
 def hmix(im1, im2, alpha):
-    return removeAlpha(alphaHmix(im1, im2, alpha))
+
+
+    pImage1 = Image.fromarray(np.transpose(np.reshape(im1,(3, 32,32)), (1,2,0)))
+    pImage2 = Image.fromarray(np.transpose(np.reshape(im2,(3, 32,32)), (1,2,0)))
+    
+    _tmp = np.array(removeAlpha(alphaHmix(pImage1, pImage2, alpha)))
+
+    _tmp = np.transpose(_tmp,(2,0,1))
+    _tmp = np.reshape(_tmp, 3072)
+    return _tmp
 
 def vmix(im1, im2, alpha):
-    return removeAlpha(alphaVmix(im1, im2, alpha))
+
+    pImage1 = Image.fromarray(np.transpose(np.reshape(im1,(3, 32,32)), (1,2,0)))
+    pImage2 = Image.fromarray(np.transpose(np.reshape(im2,(3, 32,32)), (1,2,0)))
+    
+    _tmp = np.array(removeAlpha(alphaVmix(pImage1, pImage2, alpha)))
+
+    _tmp = np.transpose(_tmp,(2,0,1))
+    _tmp = np.reshape(_tmp, 3072)
+    return _tmp
+
 
 # get ith image from cifar
 def get_image(i):
