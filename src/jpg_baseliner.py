@@ -79,7 +79,7 @@ def hmix(im1, im2, alpha):
 
     pImage1 = Image.fromarray(np.transpose(np.reshape(im1,(3, 32,32)), (1,2,0)))
     pImage2 = Image.fromarray(np.transpose(np.reshape(im2,(3, 32,32)), (1,2,0)))
-    
+
     _tmp = np.array(removeAlpha(alphaHmix(pImage1, pImage2, alpha)))
 
     _tmp = np.transpose(_tmp,(2,0,1))
@@ -90,7 +90,7 @@ def vmix(im1, im2, alpha):
 
     pImage1 = Image.fromarray(np.transpose(np.reshape(im1,(3, 32,32)), (1,2,0)))
     pImage2 = Image.fromarray(np.transpose(np.reshape(im2,(3, 32,32)), (1,2,0)))
-    
+
     _tmp = np.array(removeAlpha(alphaVmix(pImage1, pImage2, alpha)))
 
     _tmp = np.transpose(_tmp,(2,0,1))
@@ -144,18 +144,18 @@ def linearize(matrix):
 
 if __name__ == "__main__":
 
-    img1 = get_image(32000)
-    img2 = get_image(34000)
+    img1 = get_image(23767)
+    img2 = get_image(45809)
 
     pImage1 = Image.fromarray(img1)
     pImage2 = Image.fromarray(img2)
 
+    pImage1.save('fie1.jpg', 'JPEG', quality=80)
+    pImage2.save('fie2.jpg', 'JPEG', quality=80)
     #pImage = Image.frombytes('RGB', fig.canvas.get_width_height(),fig.canvas.tostring_rgb())
 
-    pImage = alphaVmix(pImage2,pImage1,0.7)
+    pImage = alphaHmix(pImage1,pImage2,0.4658203125)
 
-    removeAlpha(pImage1).save('fie1.jpg', 'JPEG', quality=80)
-    removeAlpha(pImage2).save('fie2.jpg', 'JPEG', quality=80)
     #pImage.show()
     removeAlpha(pImage).save('fie.jpg', 'JPEG', quality=80)
 
