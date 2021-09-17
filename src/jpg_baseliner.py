@@ -19,9 +19,10 @@ def alphaV(im, frm, to):
 
     # print('alphaV {} {}'.format(int(width*frm),int(width*to)))
 
+    pix_frm, pix_to = int(height*frm), int(height*to)
+    y = pix_to
 
-
-    for y in range(int(height*frm), int(height*to)):
+    for y in range(pix_frm, pix_to):
         alpha = 255-int((y - height*frm)/height/(to - frm) * 255)
         for x in range(width):
             pixels[x, y] = pixels[x, y][:3] + (alpha,)
@@ -46,7 +47,10 @@ def alphaH(im, frm, to):
 
     # print('alphaH {} {}'.format(int(width*frm),int(width*to)))
 
-    for x in range(int(width*frm), int(width*to)):
+    pix_frm, pix_to = int(width*frm), int(width*to)
+    x = pix_to
+
+    for x in range(pix_frm, pix_to):
         alpha = 255-int((x - width*frm)/width/(to - frm) * 255)
         for y in range(height):
             pixels[x, y] = pixels[x, y][:3] + (alpha,)
@@ -154,7 +158,7 @@ if __name__ == "__main__":
     pImage2.save('fie2.jpg', 'JPEG', quality=80)
     #pImage = Image.frombytes('RGB', fig.canvas.get_width_height(),fig.canvas.tostring_rgb())
 
-    pImage = alphaHmix(pImage1,pImage2,0.4658203125)
+    pImage = alphaHmix(pImage1,pImage2,0.9999999)
 
     #pImage.show()
     removeAlpha(pImage).save('fie.jpg', 'JPEG', quality=80)
