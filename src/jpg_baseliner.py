@@ -14,6 +14,13 @@ def alphaV(im, frm, to):
     im.putalpha(255)
 
     pixels = im.load()
+
+    # print('alphaV {} {}'.format(frm,width*to))
+
+    # print('alphaV {} {}'.format(int(width*frm),int(width*to)))
+
+
+
     for y in range(int(height*frm), int(height*to)):
         alpha = 255-int((y - height*frm)/height/(to - frm) * 255)
         for x in range(width):
@@ -24,7 +31,7 @@ def alphaV(im, frm, to):
 
     return im
 
-# prograssive horizsontal alpha fading from @frm% to @to%
+# progressive horizsontal alpha fading from @frm% to @to%
 def alphaH(im, frm, to):
     assert to >= frm
     assert to > 0 and to <= 1
@@ -34,6 +41,11 @@ def alphaH(im, frm, to):
     im.putalpha(255)
 
     pixels = im.load()
+
+    # print('alphaH {} {}'.format(frm, to))
+
+    # print('alphaH {} {}'.format(int(width*frm),int(width*to)))
+
     for x in range(int(width*frm), int(width*to)):
         alpha = 255-int((x - width*frm)/width/(to - frm) * 255)
         for y in range(height):

@@ -579,8 +579,12 @@ class Server:
         # to be fixed how to reshape the values
         self.main_model.eval()
         with torch.no_grad():
-            if self.network_type == 'CNN':
-                data = data.reshape(-1, self.rgb_channels, self.width, self.height)
+            if self.network_type == 'CNN' and self.dataset == 'cifar':
+                data = data.permute(0, 3, 1, 2)
+            elif self.network_type == 'CNN' and self.dataset == 'mnist':
+                data = data.reshape(-1, 1, 28, 28)
+            elif self.network_type == 'NN':
+                data = data.reshape(-1, self.rgb_channels*self.width*self.height)
             return self.main_model(data)
 
     def save_model(self, path):

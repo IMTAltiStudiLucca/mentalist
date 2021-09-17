@@ -191,7 +191,7 @@ class Sender(Client):
                 logging.debug("Sender: x_train %s", self.x_train[c])
                 # bias injection dataset
 
-                x_train_reshaped, = self.reshape_dataset(self.x_train[c], None)
+                x_train_reshaped, _ = self.reshape_dataset(self.x_train[c], self.x_train[c])
                 """
                 if self.network_type == 'CNN':
                     x_train_reshaped = self.x_train[c].reshape(-1, 1, 28, 28)
@@ -226,7 +226,7 @@ class Sender(Client):
                 logging.debug("Sender: x_train %s", self.x_train[c])
                 # bias injection dataset
 
-                x_train_reshaped, = self.reshape_dataset(self.x_train[c], None)
+                x_train_reshaped, _ = self.reshape_dataset(self.x_train[c], self.x_train[c])
                 """
                 if self.network_type == 'CNN':
                     x_train_reshaped = self.x_train[c].reshape(-1, 1, 28, 28)
@@ -513,14 +513,16 @@ class Receiver(Client):
 
 class Observer(Client):
 
-    def __init__(self,network_type):
+    def __init__(self,network_type, dataset, rgb_channels, height, width):
         self.frame_count = 0
         self.frame = 0
         self.samples = None
         x_train = numpy.array([])
         y_train = numpy.array([])
         x_train = x_train.astype('float32')
-        super().__init__("Observer", x_train, y_train, x_train, y_train,network_type=network_type)
+        super().__init__("Observer", x_train, y_train, x_train, y_train,network_type=network_type,
+                        dataset=dataset, rgb_channels=rgb_channels, height=height, width=width
+                        )
 
     # Covert channel send
     def call_training(self, n_of_epoch):
@@ -671,7 +673,9 @@ def main():
     setup = Setup(args.conf_file)
 
     # 2.2 add observer
-    observer = Observer(network_type=setup_env.network_type)
+    observer = Observer(network_type=setup_env.network_type, 
+                        dataset=setup_env.dataset, rgb_channels = setup_env.rgb_channels, 
+                         height = setup_env.height, width = setup_env.width)
     setup.add_clients(observer)
 
     # 3. run N rounds OR load pre-trained models
