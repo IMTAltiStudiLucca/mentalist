@@ -368,13 +368,33 @@ class Server:
             # c.get_distance()
             # logging.info('Distance after send_weights c: {} distance: {:.3f}'.format(c.id, c.distance))
 
+    def select_clients(self):
+        # print('Clients: {}'.format(self.list_of_clients))
+
+        self.attackers = [c for c in self.list_of_clients if ('Observer' in c.id) or ('Receiver' in c.id) or ('Sender' in c.id)] 
+        self.clients = [c for c in self.list_of_clients if ('Observer' not in c.id) and ('Receiver' not in c.id) and ('Sender' not in c.id) ]
+        logging.info('N. attackers {}'.format(len(self.attackers)))
+        logging.info('N. clients {}'.format(len(self.clients)))        
+        n_clients = len(self.clients)
+        types_of_clients = ['a','c']
+        others_prob = 1-(self.random_clients*2)
+        sel_first = random.choices(types_of_clients,weights = [2*self.random_clients,others_prob],k=n_clients)
+        n_others = max(sel_first.count('c'),10-len(self.attackers))
+        n_attackers = min(sel_first.count('a'),len(self.attackers))
+        logging.info('N_selected others {} and attackers {}'.format(n_others,n_attackers))
+        #better to keep here to check everytime the list of clients
+        return random.sample(self.attackers,n_attackers) + random.sample(self.clients,n_others)
+        
+        
+            
     def training_clients(self):
         logging.debug("Server: training_clients()")
+        logging.info("Server: clients {}".format( [c.id for c in self.list_of_clients]))
+        self.selected_clients = self.select_clients()
+#         self.selected_clients = random.sample(self.list_of_clients, math.floor(
+#             len(self.list_of_clients) * self.random_clients))
 
-        self.selected_clients = random.sample(self.list_of_clients, math.floor(
-            len(self.list_of_clients) * self.random_clients))
-
-        logging.debug("Server: selected clients %s", self.selected_clients)
+        logging.info("Server: selected clients {}".format( [c.id for c in self.selected_clients]))
 
         if self.multiprocessing:
             processes = []
