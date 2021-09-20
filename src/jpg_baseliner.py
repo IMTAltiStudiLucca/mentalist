@@ -148,8 +148,9 @@ def linearize(matrix):
 
 if __name__ == "__main__":
 
-    img1 = get_image(23767)
-    img2 = get_image(45809)
+
+    img1 = get_image(4714)
+    img2 = get_image(28387)
 
     pImage1 = Image.fromarray(img1)
     pImage2 = Image.fromarray(img2)
@@ -158,7 +159,7 @@ if __name__ == "__main__":
     pImage2.save('fie2.jpg', 'JPEG', quality=80)
     #pImage = Image.frombytes('RGB', fig.canvas.get_width_height(),fig.canvas.tostring_rgb())
 
-    pImage = alphaHmix(pImage1,pImage2,0.9999999)
+    pImage = alphaHmix(pImage1,pImage2,0.3)
 
     #pImage.show()
     removeAlpha(pImage).save('fie.jpg', 'JPEG', quality=80)

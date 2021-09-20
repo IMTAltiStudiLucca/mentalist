@@ -41,6 +41,7 @@ import argparse
 import multiprocessing as mp
 from keras.datasets import cifar10
 
+
 def worker(c, num_of_epochs):
     logging.debug("Launching training for client: {}".format(c.id))
     c.call_training(num_of_epochs)
@@ -355,7 +356,9 @@ class Server:
                 torch.load(os.path.join(path, "main_model")))
 
         self.main_optimizer = torch.optim.SGD(
-            self.main_model.parameters(), lr=self.learning_rate, momentum=self.momentum)
+            self.main_model.parameters(), 
+            lr=self.learning_rate, 
+            momentum=self.momentum)
         self.main_criterion = nn.CrossEntropyLoss()
         self.send_weights()
 
@@ -371,30 +374,31 @@ class Server:
     def select_clients(self):
         # print('Clients: {}'.format(self.list_of_clients))
 
-        self.attackers = [c for c in self.list_of_clients if ('Observer' in c.id) or ('Receiver' in c.id) or ('Sender' in c.id)] 
-        self.clients = [c for c in self.list_of_clients if ('Observer' not in c.id) and ('Receiver' not in c.id) and ('Sender' not in c.id) ]
-        logging.info('N. attackers {}'.format(len(self.attackers)))
-        logging.info('N. clients {}'.format(len(self.clients)))        
+        self.attackers = [c for c in self.list_of_clients if (
+            'Receiver' in c.id) or ('Sender' in c.id)]
+        self.clients = [c for c in self.list_of_clients if ('Observer' not in c.id) and (
+            'Receiver' not in c.id) and ('Sender' not in c.id)]
+        logging.debug('Server: N. attackers {}'.format(len(self.attackers)))
+        logging.debug('Server: N. clients {}'.format(len(self.clients)))
         n_clients = len(self.clients)
-        types_of_clients = ['a','c']
+        types_of_clients = ['a', 'c']
         others_prob = 1-(self.random_clients*2)
-        sel_first = random.choices(types_of_clients,weights = [2*self.random_clients,others_prob],k=n_clients)
-        n_others = max(sel_first.count('c'),10-len(self.attackers))
-        n_attackers = min(sel_first.count('a'),len(self.attackers))
-        logging.info('N_selected others {} and attackers {}'.format(n_others,n_attackers))
-        #better to keep here to check everytime the list of clients
-        return random.sample(self.attackers,n_attackers) + random.sample(self.clients,n_others)
-        
-        
-            
+        sel_first = random.choices(types_of_clients, weights=[
+                                   2*self.random_clients, others_prob], k=n_clients)
+        n_others = max(sel_first.count('c'), 10-len(self.attackers))
+        n_attackers = min(sel_first.count('a'), len(self.attackers))
+        logging.info('N_selected others {} and attackers {}'.format(n_others, n_attackers))
+        # better to keep here to check everytime the list of clients
+        return random.sample(self.attackers, n_attackers) + random.sample(self.clients, n_others)
+
     def training_clients(self):
         logging.debug("Server: training_clients()")
-        logging.info("Server: clients {}".format( [c.id for c in self.list_of_clients]))
+        logging.info("Server: clients {}".format([c.id for c in self.list_of_clients]))
         self.selected_clients = self.select_clients()
 #         self.selected_clients = random.sample(self.list_of_clients, math.floor(
 #             len(self.list_of_clients) * self.random_clients))
 
-        logging.info("Server: selected clients {}".format( [c.id for c in self.selected_clients]))
+        logging.info("Server: selected clients {}".format([c.id for c in self.selected_clients]))
 
         if self.multiprocessing:
             processes = []
@@ -744,7 +748,7 @@ class Client:
             self.train_loss, self.train_accuracy = self.train(train_dl)
             self.test_loss, self.test_accuracy = self.validation(test_dl)
             logging.debug("Client: {}".format(self.id) + " | epoch: {:3.0f}".format(epoch + 1) +
-                         " | train accuracy: {:7.5f}".format(self.train_accuracy) + " | test accuracy: {:7.5f}".format(self.test_accuracy))
+                          " | train accuracy: {:7.5f}".format(self.train_accuracy) + " | test accuracy: {:7.5f}".format(self.test_accuracy))
 
     def train(self, train_dl):
         logging.debug("INSIDE THE TRAINING CLIENT {}".format(self.id))
