@@ -155,6 +155,7 @@ class CNN(nn.Module):
 
 #         return out
 
+
     def clone(self):
         model_clone = CNN(self.rgb_channels, self.n_classes, self.dataset)
         model_clone.cnn1.weight.data = self.cnn1.weight.data.clone()
@@ -190,9 +191,13 @@ class Setup:
         self.network_type = self.settings['setup']['network_type']
         self.dataset = self.settings['setup']['dataset']
         self.aggregate_function = 'average'
+        self.virtual_clients = 0
 
-        if 'aggregation' in self.settings.keys():
-            self.settings['setup']['aggregation']
+        if 'virtual_clients' in self.settings['setup'].keys():
+            self.virtual_clients = self.settings['setup']['virtual_clients']
+
+        if 'aggregation' in self.settings['setup'].keys():
+            self.aggregate_function = self.settings['setup']['aggregation']
 
         self.saved = False
 
@@ -214,7 +219,7 @@ class Setup:
 
         self.create_clients()
 
-        self.server = Server(self.list_of_clients, self.random_clients,
+        self.server = Server(self.list_of_clients, self.random_clients, self.virtual_clients,
                              self.learning_rate, self.num_of_epochs,
                              self.batch_size, self.momentum,
                              self.saved, self.path, self.multiprocessing, self.network_type, self.dataset,
@@ -328,7 +333,7 @@ class Server:
       model updating it
     '''
 
-    def __init__(self, list_of_clients, random_clients,
+    def __init__(self, list_of_clients, random_clients, virtual_clients=0,
                  learning_rate=0.01, num_of_epochs=10,
                  batch_size=32, momentum=0.9,
                  saved=False, path=None, multiprocessing=0,
@@ -337,6 +342,7 @@ class Server:
 
         self.list_of_clients = list_of_clients
         self.random_clients = random_clients
+        self.virtual_clients = virtual_clients
         self.learning_rate = learning_rate
         self.num_of_epochs = num_of_epochs
         self.batch_size = batch_size
@@ -451,7 +457,7 @@ class Server:
         weights = self.get_all_weights()
 #         print("Client 0 ",weights['client_0'])
 #         print("Client 1 ",weights['client_1'])
-        thr = max(2, len(self.list_of_clients)-f-2)
+        thr = max(2, len(self.list_of_clients) - f - 2)
 #         print('Threshold {}'.format(thr))
         # for each client the n-f-2 closest ids of other clients
         closests = self.get_closests(weights, thr)
@@ -490,9 +496,9 @@ class Server:
         logging.debug('Server: N. clients {}'.format(len(self.clients)))
         n_clients = len(self.clients)
         types_of_clients = ['a', 'c']
-        others_prob = 1-(self.random_clients*2)
+        others_prob = 1 - (self.random_clients * 2)
         sel_first = random.choices(types_of_clients, weights=[
-                                   2*self.random_clients, others_prob], k=n_clients)
+                                   2 * self.random_clients, others_prob], k=n_clients)
         n_others = max(sel_first.count('c'), 10-len(self.attackers))
         n_attackers = min(sel_first.count('a'), len(self.attackers))
         logging.info('N_selected others {} and attackers {}'.format(n_others, n_attackers))
@@ -501,10 +507,11 @@ class Server:
 
     def training_clients(self):
         logging.debug("Server: training_clients()")
-
-        self.selected_clients = self.select_clients()
-#         self.selected_clients = random.sample(self.list_of_clients, math.floor(
-#             len(self.list_of_clients) * self.random_clients))
+        if self.virtual_clients:
+            self.selected_clients = self.select_clients()
+        else:
+            self.selected_clients = random.sample(self.list_of_clients, math.floor(
+                len(self.list_of_clients) * self.random_clients))
 
         logging.info("Server: selected clients {}".format([c.id for c in self.selected_clients]))
 
