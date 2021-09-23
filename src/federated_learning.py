@@ -40,6 +40,7 @@ import argparse
 
 import multiprocessing as mp
 from keras.datasets import cifar10
+from operator import itemgetter
 
 
 def worker(c, num_of_epochs):
@@ -154,7 +155,6 @@ class CNN(nn.Module):
 
 #         return out
 
-
     def clone(self):
         model_clone = CNN(self.rgb_channels, self.n_classes, self.dataset)
         model_clone.cnn1.weight.data = self.cnn1.weight.data.clone()
@@ -189,6 +189,7 @@ class Setup:
         self.to_save = self.settings['setup']['to_save']
         self.network_type = self.settings['setup']['network_type']
         self.dataset = self.settings['setup']['dataset']
+        self.aggregate_function = self.settings['setup']['aggregation']
 
         self.saved = False
 
@@ -228,7 +229,10 @@ class Setup:
             logging.info(
                 "Setup: starting run of the federated learning number %s", (i + 1))
             self.server.training_clients()
-            self.server.update_averaged_weights()
+            if self.aggregate_function == 'average':
+                self.server.update_averaged_weights()
+            elif self.aggregate_function == 'krum':
+                self.server.update_krum_weights()
             self.server.send_weights()
 
     def __load_dataset(self):
@@ -238,7 +242,7 @@ class Setup:
         elif self.dataset == 'mnist':
             (X_train, y_train), (X_test, y_test) = mnist.load_data()
         else:
-            print('no dataset info loaded')
+            logging.error('no dataset info loaded')
         # flat the images as 1d feature vector.
         # mnist 28x28x1 - cifar10 32x32x3
         rgb_channels = 1
@@ -325,7 +329,8 @@ class Server:
                  learning_rate=0.01, num_of_epochs=10,
                  batch_size=32, momentum=0.9,
                  saved=False, path=None, multiprocessing=0,
-                 network_type='NN', dataset='mnist', rgb_channels=1, height=28, width=28, n_classes=10):
+                 network_type='NN', dataset='mnist', rgb_channels=1,
+                 height=28, width=28, n_classes=10):
 
         self.list_of_clients = list_of_clients
         self.random_clients = random_clients
@@ -356,11 +361,111 @@ class Server:
                 torch.load(os.path.join(path, "main_model")))
 
         self.main_optimizer = torch.optim.SGD(
-            self.main_model.parameters(), 
-            lr=self.learning_rate, 
-            momentum=self.momentum)
+            self.main_model.parameters(), lr=self.learning_rate, momentum=self.momentum)
         self.main_criterion = nn.CrossEntropyLoss()
         self.send_weights()
+
+    def hstack_w_b(self, a, b):
+        return np.hstack((a, b.reshape(-1, 1)))
+
+    def get_all_weights(self):
+        # for each client tuples of weights for each layer (C:(X1,X2,X3)) where X1 = Weights + bias
+        weights = {}
+        for c in self.list_of_clients:
+            w_1 = c.model.fc1.weight.data.clone().numpy()
+            b_1 = c.model.fc1.bias.data.clone().numpy()
+            w_2 = c.model.fc2.weight.data.clone().numpy()
+            b_2 = c.model.fc2.bias.data.clone().numpy()
+            w_3 = c.model.fc3.weight.data.clone().numpy()
+            b_3 = c.model.fc3.bias.data.clone().numpy()
+            x_1 = self.hstack_w_b(w_1, b_1)
+            x_2 = self.hstack_w_b(w_2, b_2)
+            x_3 = self.hstack_w_b(w_3, b_3)
+
+            weights[c.id] = (x_1, x_2, x_3)
+        return weights
+
+    def compute_distance(self, l_i, l_j):
+
+        return np.linalg.norm(l_i-l_j)
+
+    def get_layer_distances(self, w_c_i, w_c_j):
+        distances = []
+        for l in range(len(w_c_i)):
+            #             print(w_c_i[l],w_c_j[l])
+            #             print('Distance:',np.linalg.norm(w_c_i[l]-w_c_j[l]))
+            distances.append(np.linalg.norm(w_c_i[l]-w_c_j[l]))
+#             distances.append(self.compute_distance(w_c_i[l],w_c_j[l]))
+
+        return distances
+
+    def get_closests(self, weights, thr):
+        closests = {}
+        for c_i in weights.keys():
+            pair_distances = {}
+            for c_j in weights.keys():
+                if c_i != c_j:
+                    distances = self.get_layer_distances(weights[c_i], weights[c_j])
+#                     print(c_i,c_j,distances)
+                    for l, _ in enumerate(distances):
+                        if l not in pair_distances.keys():
+                            pair_distances[l] = {}
+                        pair_distances[l][c_j] = distances[l]
+            c_closest = []
+            for l in pair_distances.keys():
+                top_k = sorted(pair_distances[l].items(), key=lambda x: x[1], reverse=False)[:thr]
+                c_closest.append(
+                    sorted(pair_distances[l].items(), key=lambda x: x[1], reverse=False)[:thr])
+            closests[c_i] = c_closest
+        return closests
+
+    def get_krum_scores(self, closests):
+        scores = {}
+        for c in closests.keys():
+            for l, _ in enumerate(closests[c]):
+                if l not in scores.keys():
+                    scores[l] = {}
+                scores[l][c] = np.sum([c_j[1]*c_j[1] for c_j in closests[c][l]])
+        return scores
+
+    def get_weights_biases_krum(self, scores, weights):
+        matrices = []
+        kr_clients = []
+        for l in scores.keys():
+            c = sorted(scores[l].items(), key=itemgetter(1), reverse=False)[0][0]
+            matrix = weights[c][l]
+            weight = matrix[:, :-1]
+            bias = matrix[:, -1]
+            matrices.append([weight, bias])
+            kr_clients.append(c)
+        return matrices, kr_clients
+
+    def hstack_w_b(self, a, b):
+        return np.hstack((a, b.reshape(-1, 1)))
+
+    def update_krum_weights(self, f=3):
+        # get all the weights and biases from each client c_i=(w1,w2,w3)
+        weights = self.get_all_weights()
+#         print("Client 0 ",weights['client_0'])
+#         print("Client 1 ",weights['client_1'])
+        thr = max(2, len(self.list_of_clients)-f-2)
+#         print('Threshold {}'.format(thr))
+        # for each client the n-f-2 closest ids of other clients
+        closests = self.get_closests(weights, thr)
+#         print("Client 0 ",closests['client_0'])
+#         print("Client 0 ",closests['client_1'])
+        scores = self.get_krum_scores(closests)
+        logging.debug('krum scores: {}'.format(scores))
+        matrices, kr_clients = self.get_weights_biases_krum(scores, weights)
+        logging.info('server: krum selected client for updates: {}'.format(kr_clients))
+        with torch.no_grad():
+            self.main_model.fc1.weight.data = torch.from_numpy(matrices[0][0])
+            self.main_model.fc2.weight.data = torch.from_numpy(matrices[1][0])
+            self.main_model.fc3.weight.data = torch.from_numpy(matrices[2][0])
+
+            self.main_model.fc1.bias.data = torch.from_numpy(matrices[0][1])
+            self.main_model.fc2.bias.data = torch.from_numpy(matrices[1][1])
+            self.main_model.fc3.bias.data = torch.from_numpy(matrices[2][1])
 
     def get_current_anomalous_client(self):
         return self.current_anomalous_client
@@ -393,7 +498,7 @@ class Server:
 
     def training_clients(self):
         logging.debug("Server: training_clients()")
-        logging.info("Server: clients {}".format([c.id for c in self.list_of_clients]))
+
         self.selected_clients = self.select_clients()
 #         self.selected_clients = random.sample(self.list_of_clients, math.floor(
 #             len(self.list_of_clients) * self.random_clients))
