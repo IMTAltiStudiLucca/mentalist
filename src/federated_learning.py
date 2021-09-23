@@ -189,7 +189,10 @@ class Setup:
         self.to_save = self.settings['setup']['to_save']
         self.network_type = self.settings['setup']['network_type']
         self.dataset = self.settings['setup']['dataset']
-        self.aggregate_function = self.settings['setup']['aggregation']
+        self.aggregate_function = 'average'
+
+        if 'aggregation' in self.settings.keys():
+            self.settings['setup']['aggregation']
 
         self.saved = False
 
@@ -443,7 +446,7 @@ class Server:
     def hstack_w_b(self, a, b):
         return np.hstack((a, b.reshape(-1, 1)))
 
-    def update_krum_weights(self, f=3):
+    def update_krum_weights(self, f=1):
         # get all the weights and biases from each client c_i=(w1,w2,w3)
         weights = self.get_all_weights()
 #         print("Client 0 ",weights['client_0'])
