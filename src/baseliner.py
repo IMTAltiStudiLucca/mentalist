@@ -110,6 +110,7 @@ def cancelFromTop(image, alpha):
 def hmix(left_i, right_i, alpha):
     assert(0 <= alpha <= 1)
     right_sq = squarize(right_i)
+    right_sq.setflags(write=1)
     left_sq = squarize(left_i)
     tbc = len(right_sq) * len(right_sq[0]) * alpha
     for j in range(len(right_sq[0])):
@@ -125,6 +126,7 @@ def hmix(left_i, right_i, alpha):
 def vmix(top_i, bot_i, alpha):
     assert(0 <= alpha <= 1)
     bot_sq = squarize(bot_i)
+    bot_sq.setflags(write=1)
     top_sq = squarize(top_i)
     tbc = len(bot_sq) * len(bot_sq[0]) * alpha
     for i in range(len(bot_sq)):
