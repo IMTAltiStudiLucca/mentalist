@@ -161,7 +161,7 @@ def squarize(list, shape=(28,28)):
     for d in shape:
         pi *= d
 
-    assert(len(list) == d), "List of length " + str(len(list)) + " does not match dimension " + str(d)
+    assert(len(list) == pi), "List of length " + str(len(list)) + " does not match dimension " + str(pi)
     return list.reshape(shape)
 
 
