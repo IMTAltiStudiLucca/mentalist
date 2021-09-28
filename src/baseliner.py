@@ -82,7 +82,7 @@ def baseline_change_brightness(image, byte):
 ## Cancel the picture from left
 def cancelFromLeft(image, alpha):
     assert(0 <= alpha <= 1)
-    new_image = squarize(image)
+    new_image = squarize(image.copy())
     tbr = len(new_image) * len(new_image[0]) * alpha
     for j in range(len(new_image[0])):
         for i in range(len(new_image)):
@@ -96,7 +96,7 @@ def cancelFromLeft(image, alpha):
 ## Cancel the picture from top
 def cancelFromTop(image, alpha):
     assert(0 <= alpha <= 1)
-    new_image = squarize(image)
+    new_image = squarize(image.copy())
     tbr = len(new_image) * len(new_image[0]) * alpha
     for i in range(len(new_image)):
         for j in range(len(new_image[i])):
@@ -109,8 +109,8 @@ def cancelFromTop(image, alpha):
 ## mix two pictures horizontally
 def hmix(left_i, right_i, alpha):
     assert(0 <= alpha <= 1)
-    right_sq = squarize(right_i)
-    right_sq.setflags(write=1)
+    right_sq = squarize(right_i.copy())
+    # right_sq.setflags(write=1)
     left_sq = squarize(left_i)
     tbc = len(right_sq) * len(right_sq[0]) * alpha
     for j in range(len(right_sq[0])):
@@ -125,8 +125,8 @@ def hmix(left_i, right_i, alpha):
 ## mix two pictures vertically
 def vmix(top_i, bot_i, alpha):
     assert(0 <= alpha <= 1)
-    bot_sq = squarize(bot_i)
-    bot_sq.setflags(write=1)
+    bot_sq = squarize(bot_i.copy())
+    # bot_sq.setflags(write=1)
     top_sq = squarize(top_i)
     tbc = len(bot_sq) * len(bot_sq[0]) * alpha
     for i in range(len(bot_sq)):
@@ -158,13 +158,13 @@ def baseline_overlay_mask(image, mask, alpha=1):
 
     return new_image
 
-def squarize(list, shape=(28,28)):
+def squarize(l, shape=(28,28)):
     pi = 1
     for d in shape:
         pi *= d
 
-    assert(len(list) == pi), "List of length " + str(len(list)) + " does not match dimension " + str(pi)
-    return list.reshape(shape)
+    # assert(len(list) == pi), "List of length " + str(len(list)) + " does not match dimension " + str(pi)
+    return l.reshape(shape)
 
 
 def linearize(matrix):
