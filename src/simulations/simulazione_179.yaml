@@ -2,7 +2,7 @@ saved:
 #  timestamp: '202101271243' # cifar CNN
   # timestamp: '202101100137' # cifar NN
 #  timestamp: '202109151000' # CIFAR CNN
-timestamp: '202109151622' # CIFAR NN
+   timestamp: '202109151622' # CIFAR NN
 setup:
   data_path: ""
   n_clients: 10
