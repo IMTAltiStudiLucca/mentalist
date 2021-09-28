@@ -24,6 +24,6 @@ setup:
   n_Rcal: 1
   n_train_offset: 1
   docker: 0
-  frame_size: 1
+  frame_size: 18
   #aggregation: 'krum'
   virtual_clients: 0
