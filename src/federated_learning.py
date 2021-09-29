@@ -380,7 +380,7 @@ class Server:
     def get_all_weights(self):
         # for each client tuples of weights for each layer (C:(X1,X2,X3)) where X1 = Weights + bias
         weights = {}
-        for c in self.list_of_clients:
+        for c in self.selected_clients:
             w_1 = c.model.fc1.weight.data.clone().numpy()
             b_1 = c.model.fc1.bias.data.clone().numpy()
             w_2 = c.model.fc2.weight.data.clone().numpy()
@@ -457,7 +457,7 @@ class Server:
         weights = self.get_all_weights()
 #         print("Client 0 ",weights['client_0'])
 #         print("Client 1 ",weights['client_1'])
-        thr = max(2, len(self.list_of_clients) - f - 2)
+        thr = max(2, len(self.selected_clients) - f - 2)
 #         print('Threshold {}'.format(thr))
         # for each client the n-f-2 closest ids of other clients
         closests = self.get_closests(weights, thr)
@@ -510,7 +510,8 @@ class Server:
         if self.virtual_clients:
             self.selected_clients = self.select_clients()
         else:
-            self.selected_clients = random.sample(self.list_of_clients, math.floor(
+            list_of_eligibles = [c for c in self.list_of_clients if c.id != "client_Observer"]
+            self.selected_clients = random.sample(list_of_eligibles, math.floor(
                 len(self.list_of_clients) * self.random_clients))
 
         logging.info("Server: selected clients {}".format([c.id for c in self.selected_clients]))
