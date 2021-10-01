@@ -5,12 +5,13 @@ setup:
   num_of_epochs: 10
   batch_size: 32
   momentum: 0.9
-  random_clients: 0.5
+  random_clients: 0.01
   n_of_federated_runs: 10
   federated_runs: 200
   save_dir: '../runs'
   to_save: 1
   multiprocessing: 0
   network_type: 'NN'
-  dataset : 'cifar'
+  dataset : 'mnist'
+  aggregation: 'krum'
 
