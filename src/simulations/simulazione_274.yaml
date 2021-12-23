@@ -15,7 +15,7 @@ setup:
   federated_runs: 1
   save_dir : './runs'
   to_save: 0
-  dataset: 'mnist'
+  dataset: 'cifar'
   multiprocessing: 0
   network_type: 'NN'
   save_tests: 1

@@ -128,6 +128,27 @@ def get_image(i):
     return single_img_reshaped
 
 
+def get_label(i):
+
+    assert(i < 60000)
+    findex = 1+(i // 10000)
+    fname = ''
+    if findex > 5:
+        fname = 'test_batch'
+    else:
+        fname = 'data_batch_' + str(findex)
+
+    f = open('../data/cifar/' + fname, 'rb')
+
+    data_dict = pickle.load(f, encoding='bytes')
+
+    f.close()
+
+    labels = data_dict[b'labels']
+
+    return labels[i % 10000]
+
+
 def squarize(list, shape=(32,32,3)):
     pi = 1
     for d in shape:
@@ -148,21 +169,26 @@ def linearize(matrix):
 
 if __name__ == "__main__":
 
+    idx1 = 25296
+    idx2 = 26872
 
-    img1 = get_image(4714)
-    img2 = get_image(28387)
+    print("Example {} = {}".format(idx1,get_label(idx1)))
+    print("Example {} = {}".format(idx2,get_label(idx2)))
+    
+    img1 = get_image(idx1)
+    img2 = get_image(idx2)
 
     pImage1 = Image.fromarray(img1)
     pImage2 = Image.fromarray(img2)
 
-    pImage1.save('fie1.jpg', 'JPEG', quality=80)
-    pImage2.save('fie2.jpg', 'JPEG', quality=80)
+    pImage1.save('fore.jpg', 'JPEG', quality=80)
+    pImage2.save('back.jpg', 'JPEG', quality=80)
     #pImage = Image.frombytes('RGB', fig.canvas.get_width_height(),fig.canvas.tostring_rgb())
 
-    pImage = alphaHmix(pImage1,pImage2,0.3)
+    pImage = alphaVmix(pImage1,pImage2,0.4682)
 
     #pImage.show()
-    removeAlpha(pImage).save('fie.jpg', 'JPEG', quality=80)
+    removeAlpha(pImage).save('mix.jpg', 'JPEG', quality=80)
 
     """
     im1 = Image.open('bird.jpg')
