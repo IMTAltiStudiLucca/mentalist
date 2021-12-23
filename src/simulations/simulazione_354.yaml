@@ -1,0 +1,29 @@
+saved:
+#  timestamp: '202101271243' # MNIST CNN
+  timestamp: '202101100137' # MNIST NN
+#  timestamp: '202109151000' # CIFAR CNN
+#  timestamp: '202109151622' # CIFAR NN
+setup:
+  data_path: ""
+  n_clients: 10
+  learning_rate: 0.01
+  num_of_epochs: 10
+  batch_size: 32
+  momentum: 0.9
+  random_clients: 0.01
+  n_of_federated_runs: 1
+  federated_runs: 1
+  save_dir : './runs'
+  to_save: 0
+  dataset: 'mnist'
+  multiprocessing: 0
+  network_type: 'NN'
+  save_tests: 1
+  tests_dir: './tests'
+  n_bits: 100
+  n_Rcal: 1
+  n_train_offset: 1
+  docker: 0
+  frame_size: 22
+  #aggregation: 'krum'
+  virtual_clients: 1
