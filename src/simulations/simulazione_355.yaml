@@ -20,7 +20,7 @@ setup:
   network_type: 'NN'
   save_tests: 1
   tests_dir: './tests'
-  n_bits: 10
+  n_bits: 100
   n_Rcal: 1
   n_train_offset: 1
   docker: 0
