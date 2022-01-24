@@ -1,0 +1,23 @@
+saved:
+  timestamp: '202101100137' # for NN
+setup:
+  data_path: ""
+  n_clients: 10
+  learning_rate: 0.01
+  num_of_epochs: 10
+  batch_size: 32
+  momentum: 0.9
+  random_clients: 0.5
+  n_of_federated_runs: 1
+  federated_runs: 1
+  save_dir : './runs'
+  to_save: 0
+  multiprocessing: 0
+  network_type: 'NN'
+  save_tests: 1
+  tests_dir: './tests'
+  n_channels: 9
+  n_bits: 100
+  frame_size: 6
+  n_Rcal: 1
+  n_train_offset: 1
