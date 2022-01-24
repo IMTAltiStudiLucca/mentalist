@@ -1,5 +1,5 @@
 saved:
-  timestamp: '202101100137' # for NN
+  timestamp: '202109151622' # CIFAR NN
 setup:
   data_path: ""
   n_clients: 10
@@ -16,8 +16,9 @@ setup:
   network_type: 'NN'
   save_tests: 1
   tests_dir: './tests'
-  n_channels: 7
+  n_channels: 1
   n_bits: 100
-  frame_size: 6
+  frame_size: 9
   n_Rcal: 1
   n_train_offset: 1
+  dataset: 'cifar'
