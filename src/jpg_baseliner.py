@@ -5,7 +5,7 @@ import pickle
 import matplotlib.pyplot as plt
 
 # prograssive vertical alpha fading from @frm% to @to%
-def alphaV(im, frm, to):
+def alphaV_old(im, frm, to):
     assert to >= frm
     assert to > 0 and to <= 1
     assert frm >= 0 and frm < 1
@@ -33,7 +33,7 @@ def alphaV(im, frm, to):
     return im
 
 # progressive horizsontal alpha fading from @frm% to @to%
-def alphaH(im, frm, to):
+def alphaH_old(im, frm, to):
     assert to >= frm
     assert to > 0 and to <= 1
     assert frm >= 0 and frm < 1
@@ -60,17 +60,62 @@ def alphaH(im, frm, to):
 
     return im
 
+# set alpha channel to pixels after @cut%
+def alphaV(im, cut):
+    assert cut > 0 and cut <= 1
+    width, height = im.size
+
+    im.putalpha(255)
+
+    pixels = im.load()
+
+    # print('alphaV {} {}'.format(frm,width*to))
+
+    # print('alphaV {} {}'.format(int(width*frm),int(width*to)))
+
+    pix_cut = int(height*width*cut)
+
+    for y in range(0, height):
+        for x in range(0, width):
+            if x+(y*width) > pix_cut:
+                pixels[x, y] = pixels[x, y][:3] + (0,)
+
+    return im
+
+# set alpha channel to pixels after @cut%
+def alphaH(im, cut):
+    assert cut > 0 and cut <= 1
+    width, height = im.size
+
+    im.putalpha(255)
+
+    pixels = im.load()
+
+    # print('alphaV {} {}'.format(frm,width*to))
+
+    # print('alphaV {} {}'.format(int(width*frm),int(width*to)))
+
+    pix_cut = int(height*width*cut)
+
+
+    for x in range(0, width):
+        for y in range(0, height):
+            if (x*height) + y > pix_cut:
+                pixels[x, y] = pixels[x, y][:3] + (0,)
+
+    return im
+
 def overlay(bim, fim):
     return Image.alpha_composite(bim, fim)
 
 def alphaVmix(im1, im2, alpha):
     im2.putalpha(255)
-    alphaV(im1, alpha/2, alpha)
+    alphaV(im1, alpha)
     return overlay(im2,im1)
 
 def alphaHmix(im1, im2, alpha):
     im2.putalpha(255)
-    alphaH(im1, alpha/2, alpha)
+    alphaH(im1, alpha)
     return overlay(im2,im1)
 
 def removeAlpha(img):
@@ -174,7 +219,7 @@ if __name__ == "__main__":
 
     print("Example {} = {}".format(idx1,get_label(idx1)))
     print("Example {} = {}".format(idx2,get_label(idx2)))
-    
+
     img1 = get_image(idx1)
     img2 = get_image(idx2)
 
@@ -185,7 +230,7 @@ if __name__ == "__main__":
     pImage2.save('back.jpg', 'JPEG', quality=80)
     #pImage = Image.frombytes('RGB', fig.canvas.get_width_height(),fig.canvas.tostring_rgb())
 
-    pImage = alphaVmix(pImage1,pImage2,0.4682)
+    pImage = alphaHmix(pImage1,pImage2,0.5)
 
     #pImage.show()
     removeAlpha(pImage).save('mix.jpg', 'JPEG', quality=80)
