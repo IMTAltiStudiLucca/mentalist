@@ -99,10 +99,10 @@ class CNN(nn.Module):
         self.maxpool2 = nn.MaxPool2d(kernel_size=2)
 
         # Fully connected 1
-        if dataset == 'mnist':
-            self.fc1 = nn.Linear(32 * 5 * 5, n_classes)
-        elif dataset == 'cifar':
-            self.fc1 = nn.Linear(32 * 6 * 6, n_classes)
+        if self.dataset == 'mnist':
+            self.fc1 = nn.Linear(32 * 5 * 5, self.n_classes)
+        elif self.dataset == 'cifar':
+            self.fc1 = nn.Linear(32 * 6 * 6, self.n_classes)
 
     def forward(self, x, to_print=False):
         # Set 1
@@ -135,27 +135,6 @@ class CNN(nn.Module):
             print('FINAL', out.shape)
         return out
 
-
-#     def forward(self, x):
-#         # Set 1
-#         out = self.cnn1(x)
-#         out = self.relu1(out)
-#         out = self.maxpool1(out)
-
-#         # Set 2
-#         out = self.cnn2(out)
-#         out = self.relu2(out)
-#         out = self.maxpool2(out)
-
-#         # Flatten
-#         out = out.view(out.size(0), -1)
-
-#         # Dense
-#         out = self.fc1(out)
-
-#         return out
-
-
     def clone(self):
         model_clone = CNN(self.rgb_channels, self.n_classes, self.dataset)
         model_clone.cnn1.weight.data = self.cnn1.weight.data.clone()
@@ -164,6 +143,68 @@ class CNN(nn.Module):
         model_clone.cnn1.bias.data = self.cnn1.bias.data.clone()
         model_clone.cnn2.bias.data = self.cnn2.bias.data.clone()
         model_clone.fc1.bias.data = self.fc1.bias.data.clone()
+        return model_clone
+
+
+class CNN_2(nn.Module):   
+    def __init__(self, rgb_channels, n_classes, dataset):
+        
+        super(CNN_2, self).__init__()
+        self.input_fc_layer = 0
+        self.rgb_channels = rgb_channels
+        self.n_classes = n_classes
+        self.dataset = dataset
+        self.conv_layer = nn.Sequential(
+
+            # Conv Layer block 1
+            nn.Conv2d(in_channels=rgb_channels, out_channels=32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            # Conv Layer block 2
+            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout2d(p=0.05),
+
+        )
+        if self.dataset == 'mnist':
+            self.input_fc_layer = 6272
+        elif self.dataset == 'cifar':
+            self.input_fc_layer = 8192
+
+        self.fc_layer = nn.Sequential(
+            nn.Dropout(p=0.1),
+            nn.Linear(self.input_fc_layer, 1024),
+            nn.ReLU(inplace=True),
+            nn.Linear(1024, 512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.1),
+            nn.Linear(512, self.n_classes)
+        )
+    def forward(self, x):
+        """Perform forward."""
+        
+        # conv layers
+        x = self.conv_layer(x)
+        
+        # flatten
+        x = x.view(x.size(0), -1)
+        # print(x.shape)
+        # fc layer
+        x = self.fc_layer(x)
+
+        return x
+
+    def clone(self):
+        model_clone = CNN_2(self.rgb_channels, self.n_classes, self.dataset)
+        model_clone.load_state_dict(self.state_dict())
         return model_clone
 
 
@@ -242,6 +283,8 @@ class Setup:
             elif self.aggregate_function == 'krum':
                 self.server.update_krum_weights()
             self.server.send_weights()
+            for idx_client,c in enumerate(self.list_of_clients):
+                logging.info('Current {} accuracy: {}'.format(c.id,self.server.get_accuracy(idx_client)))
 
     def __load_dataset(self):
         X_train, y_train, X_test, y_test = None, None, None, None
@@ -362,8 +405,12 @@ class Server:
         if self.network_type == 'NN':
             self.main_model = Net2nn(self.rgb_channels*self.width*self.height, self.n_classes)
         elif self.network_type == 'CNN':
-            logging.info('network_type: {}'.format(self.network_type))
+            # logging.info('network_type: {}'.format(self.network_type))
             self.main_model = CNN(self.rgb_channels, self.n_classes, self.dataset)
+        elif self.network_type == 'CNN2':
+            # logging.info('network_type: {}'.format(self.network_type))
+            self.main_model = CNN_2(self.rgb_channels, self.n_classes, self.dataset)
+
 
         if saved:
             self.main_model.load_state_dict(
@@ -610,6 +657,19 @@ class Server:
 
         return cnn1_mean_weight, cnn1_mean_bias, cnn2_mean_weight, cnn2_mean_bias, fc1_mean_weight, fc1_mean_bias
 
+    def get_averaged_weights_cnn_2(self):
+        status_dict = {}
+        with torch.no_grad():
+            for name in self.main_model.state_dict().keys():
+                data = torch.zeros(
+                    size = self.main_model.state_dict()[name].shape)
+                for c in self.selected_clients:
+                    m = c.model 
+                    data += m.state_dict()[name].data.clone()
+                data = data / len(self.selected_clients)
+                status_dict[name] = data
+        return status_dict
+
     def get_anomalous_client(self, norm="fro"):
         """
             - `norm` refers to the type of the norm to be calculated between the two weight matrices:
@@ -692,6 +752,10 @@ class Server:
             self.update_averaged_weights_nn()
         elif self.network_type == 'CNN':
             self.update_averaged_weights_cnn()
+        elif self.network_type == 'CNN2':
+            self.main_model = self.update_averaged_weights_cnn_2()
+        else:
+            logging.error('NETWORK TYPE NOT SUPPORTED')
 
     def update_averaged_weights_nn(self):
         fc1_mean_weight, fc1_mean_bias, fc2_mean_weight, fc2_mean_bias, fc3_mean_weight, fc3_mean_bias = self.get_averaged_weights_nn()
@@ -715,13 +779,19 @@ class Server:
             self.main_model.cnn2.bias.data = cnn2_mean_bias.data.clone()
             self.main_model.fc1.bias.data = fc1_mean_bias.data.clone()
 
+    def update_averaged_weights_cnn_2(self):
+        status_dict = self.get_averaged_weights_cnn_2()
+        with torch.no_grad():
+            self.main_model.load_state_dict(status_dict)
+        return self.main_model
+
     def predict(self, data):
         # to be fixed how to reshape the values
         self.main_model.eval()
         with torch.no_grad():
-            if self.network_type == 'CNN' and self.dataset == 'cifar':
+            if (self.network_type == 'CNN' or self.network_type == 'CNN2') and self.dataset == 'cifar':
                 data = data.permute(0, 3, 1, 2)
-            elif self.network_type == 'CNN' and self.dataset == 'mnist':
+            elif (self.network_type == 'CNN' or self.network_type == 'CNN2') and self.dataset == 'mnist':
                 data = data.reshape(-1, 1, 28, 28)
             elif self.network_type == 'NN':
                 data = data.reshape(-1, self.rgb_channels*self.width*self.height)
@@ -733,7 +803,11 @@ class Server:
 
     def get_accuracy(self, idx_client=0):
         if idx_client < len(self.list_of_clients):
-            return self.list_of_clients[idx_client].test_accuracy
+            test_ds = TensorDataset(self.list_of_clients[idx_client].x_test, self.list_of_clients[idx_client].y_test)
+            test_dl = DataLoader(test_ds, batch_size=self.batch_size)
+
+            return self.list_of_clients[idx_client].validation(test_dl)[1]
+            # self.list_of_clients[idx_client].train_accuracy
         else:
             return None
 
@@ -793,6 +867,11 @@ class Client:
             self.model = Net2nn(self.rgb_channels*self.width*self.height, self.n_classes)
         elif self.network_type == 'CNN':
             self.model = CNN(self.rgb_channels, self.n_classes, self.dataset)
+        elif self.network_type == 'CNN2':
+            self.model = CNN_2(self.rgb_channels, self.n_classes, self.dataset)
+        else: 
+            logging.error('NETWORK TYPE NOT SUPPORTED')
+            exit(-1)
 
         logging.debug("Client: %s | %s | %s", self.id, saved, path)
 
@@ -813,11 +892,11 @@ class Client:
         self.test_loss = 1
 
     def reshape_dataset(self, x_train, x_test):
-        if self.network_type == 'CNN' and self.dataset == 'cifar':
+        if (self.network_type == 'CNN' or self.network_type == 'CNN2') and self.dataset == 'cifar':
             # to be adjusted with cifar10 since the dimensions are different
             x_train = x_train.permute(0, 3, 1, 2)
             x_test = x_test.permute(0, 3, 1, 2)
-        elif self.network_type == 'CNN' and self.dataset == 'mnist':
+        elif (self.network_type == 'CNN' or self.network_type == 'CNN2') and self.dataset == 'mnist':
             x_train = x_train.reshape(-1, 1, 28, 28)
             x_test = x_test.reshape(-1, 1, 28, 28)
         elif self.network_type == 'NN':
@@ -832,6 +911,10 @@ class Client:
             self.update_model_weights_nn(main_model)
         elif self.network_type == 'CNN':
             self.update_model_weights_cnn(main_model)
+        elif self.network_type == 'CNN2':
+            self.update_model_weights_cnn_2(main_model)
+        else: 
+            logging.error('NETWORK TYPE NOT SUPPORTED')
 
     def update_model_weights_nn(self, main_model):
         with torch.no_grad():
@@ -850,6 +933,10 @@ class Client:
             self.model.cnn1.bias.data = main_model.cnn1.bias.data.clone()
             self.model.cnn2.bias.data = main_model.cnn2.bias.data.clone()
             self.model.fc1.bias.data = main_model.fc1.bias.data.clone()
+
+    def update_model_weights_cnn_2(self, main_model):
+        with torch.no_grad():
+            self.model.load_state_dict(main_model.state_dict())
 
     def call_training(self, n_of_epoch):
         train_ds = TensorDataset(self.x_train, self.y_train)
@@ -945,12 +1032,28 @@ class Client:
 
             self.distance = c_avg_distance
             return self.distance
+    def get_distance_cnn_2(self, norm='fro'):
+        c_avg_distance = 1
+        # for name in self.model.state_dict().keys():
+        #     c_avg_distance += LA.norm(self.main_model.state_dict()[name].data -self.model.state_dict()[name].data)
+        # c_avg_distance = c_avg_distance / len(self.model.state_dict().keys())
+
+        self.distance = c_avg_distance
+        return self.distance
+
 
     def get_distance(self, norm='fro'):
         if self.network_type == 'NN':
             return self.get_distance_nn(norm)
         elif self.network_type == 'CNN':
             return self.get_distance_cnn(norm)
+        elif self.network_type == 'CNN2':
+            return self.get_distance_cnn_2(norm)
+        else:
+            logging.error('NETWORK NOT SUPPORTED')
+            exit(-1)
+
+
 
     def predict(self, data):
         self.model.eval()
