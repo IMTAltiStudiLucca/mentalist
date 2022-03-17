@@ -1,0 +1,19 @@
+saved:
+  timestamp: '202203100943'
+setup:
+  aggregation: average
+  batch_size: 32
+  data_path: ''
+  dataset: cifar
+  federated_runs: 200
+  learning_rate: 0.01
+  momentum: 0.9
+  multiprocessing: 0
+  n_clients: 10
+  n_of_federated_runs: 200
+  network_type: CNN2
+  num_of_epochs: 5
+  random_clients: 0.5
+  save_dir: ../runs
+  to_save: 1
+  virtual_clients: 0
