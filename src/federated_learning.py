@@ -793,7 +793,16 @@ class Server:
 
     def predict(self, data):
         # to be fixed how to reshape the values
+        device = 'cpu'
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
+
+        self.model.to(device)
+
         self.main_model.eval()
+
         with torch.no_grad():
             if (self.network_type == 'CNN' or self.network_type == 'CNN2') and self.dataset == 'cifar':
                 data = data.permute(0, 3, 1, 2)
@@ -801,7 +810,7 @@ class Server:
                 data = data.reshape(-1, 1, 28, 28)
             elif self.network_type == 'NN':
                 data = data.reshape(-1, self.rgb_channels*self.width*self.height)
-            return self.main_model(data)
+            return self.main_model(data.to(device))
 
     def save_model(self, path):
         out_path = os.path.join(path, "main_model")
@@ -988,7 +997,6 @@ class Client:
         return train_loss / len(train_dl), correct / len(train_dl.dataset)
 
     def validation(self, test_dl):
-        self.model.eval()
         test_loss = 0.0
         correct = 0
         device = 'cpu'
@@ -998,6 +1006,7 @@ class Client:
             device = torch.device("cpu")
 
         self.model.to(device)
+        self.model.eval()
 
         with torch.no_grad():
             for data, target in test_dl:
@@ -1079,19 +1088,27 @@ class Client:
             exit(-1)
 
     def predict(self, data):
+        device = 'cpu'
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
+        self.model.to(device)
         self.model.eval()
         with torch.no_grad():
+            return self.model(data.to(device))
+
+    def save_model(self, path):
+        out_path = os.path.join(path, "model_{}".format(self.id))
+        torch.save(self.model.state_dict(), out_path)
+
             # if (self.network_type == 'CNN' or self.network_type == 'CNN2') and self.dataset == 'cifar':
             #     data = data.permute(0, 3, 1, 2)
             # elif (self.network_type == 'CNN' or self.network_type == 'CNN2') and self.dataset == 'mnist':
             #     data = data.reshape(-1, 1, 28, 28)
             # elif self.network_type == 'NN':
             #     data = data.reshape(-1, self.rgb_channels*self.width*self.height)
-            return self.model(data)
 
-    def save_model(self, path):
-        out_path = os.path.join(path, "model_{}".format(self.id))
-        torch.save(self.model.state_dict(), out_path)
 
 
 if __name__ == '__main__':
