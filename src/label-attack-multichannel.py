@@ -134,8 +134,9 @@ class Sender(Client):
         x_train = numpy.array(images)
         x_train = x_train.astype('float32')
         x_train /= 255
+        x_train = torch.from_numpy(x_train).reshape(-1,height,width,rgb_channels)
         logging.info('SENDER SHAPE X_TRAIN: {}'.format(x_train.shape))
-        x_train = torch.from_numpy(x_train)
+        
         y_train = numpy.array(labels)
         y_train = torch.from_numpy(y_train)
 
