@@ -907,18 +907,21 @@ class Client:
         self.test_loss = 1
 
     def reshape_dataset(self, x_train, x_test):
-        if (self.network_type == 'CNN' or self.network_type == 'CNN2') and self.dataset == 'cifar':
-            # to be adjusted with cifar10 since the dimensions are different
-            x_train = x_train.permute(0, 3, 1, 2)
-            x_test = x_test.permute(0, 3, 1, 2)
-        elif (self.network_type == 'CNN' or self.network_type == 'CNN2') and self.dataset == 'mnist':
-            x_train = x_train.reshape(-1, 1, 28, 28)
-            x_test = x_test.reshape(-1, 1, 28, 28)
-        elif self.network_type == 'NN':
-            x_train = x_train.reshape(-1, self.rgb_channels*self.width*self.height)
-            x_test = x_test.reshape(-1, self.rgb_channels*self.width*self.height)
+        try: 
+            if (self.network_type == 'CNN' or self.network_type == 'CNN2') and self.dataset == 'cifar':
+                # to be adjusted with cifar10 since the dimensions are different
+                x_train = x_train.permute(0, 3, 1, 2)
+                x_test = x_test.permute(0, 3, 1, 2)
+            elif (self.network_type == 'CNN' or self.network_type == 'CNN2') and self.dataset == 'mnist':
+                x_train = x_train.reshape(-1, 1, 28, 28)
+                x_test = x_test.reshape(-1, 1, 28, 28)
+            elif self.network_type == 'NN':
+                x_train = x_train.reshape(-1, self.rgb_channels*self.width*self.height)
+                x_test = x_test.reshape(-1, self.rgb_channels*self.width*self.height)
 
-        return x_train, x_test
+            return x_train, x_test
+        except Exception as e: 
+            logging.error('WRONG SHAPE: {}'.format(x_train.shape))
 
     def update_model_weights(self, main_model):
         self.main_model = main_model
