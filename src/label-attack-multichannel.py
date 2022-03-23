@@ -308,12 +308,12 @@ class Receiver(Client):
     def read_from_model(self):
 
         for c in range(self.n_channels):
+            x_pred = create_sample(self.images[c],self.dataset)            
+            # x_train = numpy.array([self.images[c]])
+            # x_train = x_train.astype('float32')
+            # x_train /= 255
 
-            x_train = numpy.array([self.images[c]])
-            x_train = x_train.astype('float32')
-            x_train /= 255
-
-            x_pred = torch.from_numpy(x_train[0])
+            # x_pred = torch.from_numpy(x_train[0])
             pred = self.label_predict(x_pred)
 
             if self.frame_count == 0:
