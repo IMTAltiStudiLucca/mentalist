@@ -94,12 +94,17 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
-def create_sample(image):
+def create_sample(image,dataset):
     x_train = numpy.array([image])
     x_train = x_train.astype('float32')
     x_train /= 255
+    x_train_torch = torch.from_numpy(x_train[[0]])
+    if dataset == 'cifar':
+        x_train_torch = x_train_torch.reshape(1,32,32,3)
+    elif dataset == 'mninst':
+        x_train_torch = x_train_torch.reshape(1,28,28,1)
     # return x_train[[0]]
-    return torch.from_numpy(x_train[[0]])
+    return x_train_torch
 
 def create_samples(images):
     l = []
@@ -406,10 +411,8 @@ class Receiver(Client):
             return 0
 
         elif self.dataset == 'cifar':
-            # image_i = jbl.linearize(jbl.get_image(i))
-            # image_j = jbl.linearize(jbl.get_image(j))
-            image_i = jbl.get_image(i)
-            image_j = jbl.get_image(j)
+            image_i = jbl.linearize(jbl.get_image(i))
+            image_j = jbl.linearize(jbl.get_image(j))
 
             logging.info('Shape image: {}'.format(image_i.shape))
             i_label = self.label_predict(create_sample(image_i))
