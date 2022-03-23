@@ -283,8 +283,8 @@ class Setup:
             elif self.aggregate_function == 'krum':
                 self.server.update_krum_weights()
             self.server.send_weights()
-            for idx_client,c in enumerate(self.list_of_clients):
-                logging.info('Current {} accuracy: {}'.format(c.id,self.server.get_accuracy(idx_client)))
+            # for idx_client,c in enumerate(self.list_of_clients):
+            #     logging.info('Current {} accuracy: {}'.format(c.id,self.server.get_accuracy(idx_client)))
 
     def __load_dataset(self):
         X_train, y_train, X_test, y_test = None, None, None, None
@@ -1005,7 +1005,7 @@ class Client:
                 target = target.to(device)
 
                 output = self.model(data)
-                target.reshape(-1,1)
+                # target.reshape(-1,1)
                 test_loss += self.criterion_info(output, target).item()
                 prediction = output.argmax(dim=1, keepdim=True)
                 correct += prediction.eq(target.view_as(prediction)
