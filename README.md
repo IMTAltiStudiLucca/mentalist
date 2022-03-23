@@ -1,4 +1,4 @@
-# sec_federated_learning
+# Covert channel attack to federated learning
 
 we prove that federated learning systems can be turned into covert channels to implement a stealth communication infrastructure.
 The main intuition is that an attacker can injects a bias in the global model by submitting purposely crafted samples.
