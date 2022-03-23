@@ -106,10 +106,10 @@ def create_sample(image,dataset):
     # return x_train[[0]]
     return x_train_torch
 
-def create_samples(images):
+def create_samples(images, dataset):
     l = []
     for i in range(len(images)):
-        l.append(create_sample(images[i]))
+        l.append(create_sample(images[i],dataset))
     return l
 
 
@@ -717,7 +717,7 @@ def main():
     log_event('Sender added')
 
     observer.set_frame(receiver.frame)
-    observer.set_sample(create_samples(receiver.images))
+    observer.set_sample(create_samples(receiver.images, observer.dataset))
 
     # 7. perform channel calibration
 
