@@ -195,8 +195,7 @@ class CNN_2(nn.Module):
         x = self.conv_layer(x)
         
         # flatten
-        # x = x.view(x.size(0), -1)
-        x = x.flatten()
+        x = x.reshape(x.size(0), -1)
         # print(x.shape)
         # fc layer
         x = self.fc_layer(x)
