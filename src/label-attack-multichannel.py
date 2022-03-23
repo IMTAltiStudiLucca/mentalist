@@ -415,6 +415,8 @@ class Receiver(Client):
             i_label = self.label_predict(create_sample(image_i))
 
             imageH = jbl.hmix(image_i, image_j, ALPHA)
+            logging.info('Shape image: {}'.format(imageH.shape))
+            
             H_label = self.label_predict(create_sample(imageH))
 
             alpha, y0_label, y1_label = self.hsearch(image_i, image_j, i_label, H_label, 0, ALPHA)
@@ -520,7 +522,6 @@ class Observer(Client):
         self.frame_count = 0
         self.frame = 0
         self.samples = None
-        print('{} {} {}'.format(rgb_channels,height,width))
         x_train = numpy.random.random(size=[1,height,width,rgb_channels])
         y_train = numpy.random.random(size=[1,height,width,rgb_channels])
         # x_train = numpy.array([])
