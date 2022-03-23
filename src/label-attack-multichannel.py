@@ -262,8 +262,8 @@ class Receiver(Client):
         self.frame_start = [0]*n_channels
         self.frame_end = [0]*n_channels
         self.state = ReceiverState.Crafting
-        x_train = numpy.array([])
-        y_train = numpy.array([])
+        x_train = numpy.random.random(size=[1,height,width,rgb_channels])
+        y_train = numpy.random.random(size=[1,height,width,rgb_channels])
         x_train = x_train.astype('float32')
         super().__init__("Receiver", x_train, y_train, x_train, y_train,network_type=network_type, dataset=dataset, rgb_channels=rgb_channels, height=height, width=width)
 
@@ -518,8 +518,8 @@ class Observer(Client):
         self.frame = 0
         self.samples = None
         print('{} {} {}'.format(rgb_channels,height,width))
-        x_train = numpy.random.random(size=[1,32,32,3])
-        y_train = numpy.random.random(size=[1,32,32,3])
+        x_train = numpy.random.random(size=[1,height,width,rgb_channels])
+        y_train = numpy.random.random(size=[1,height,width,rgb_channels])
         # x_train = numpy.array([])
         # y_train = numpy.array([])
         x_train = x_train.astype('float32')
