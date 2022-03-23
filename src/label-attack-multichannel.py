@@ -211,7 +211,7 @@ class Sender(Client):
                 else:
                     logging.error("Sender: unsupported network type")
                 """
-
+                logging.info('X train shape {} y_train_trans {}'.format(x_train_reshaped.shape,y_train_trans))
                 train_ds = TensorDataset(x_train_reshaped, torch.from_numpy(numpy.array([y_train_trans])))
                 train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE)
 
@@ -246,6 +246,7 @@ class Sender(Client):
                 else:
                     logging.error("Sender: unsupported network type")
                 """
+                logging.info('X train shape {} y_train_trans {}'.format(x_train_reshaped.shape,y_train_trans))
 
                 train_ds = TensorDataset(x_train_reshaped, torch.from_numpy(numpy.array([y_train_trans])))
                 train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE)
