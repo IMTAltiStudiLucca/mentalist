@@ -1005,7 +1005,7 @@ class Client:
                 target = target.to(device)
 
                 output = self.model(data)
-
+                target.reshape(-1,1)
                 test_loss += self.criterion_info(output, target).item()
                 prediction = output.argmax(dim=1, keepdim=True)
                 correct += prediction.eq(target.view_as(prediction)
