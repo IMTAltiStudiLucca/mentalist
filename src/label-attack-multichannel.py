@@ -137,9 +137,9 @@ class Sender(Client):
         x_train = torch.from_numpy(x_train).reshape(-1,height,width,rgb_channels)
         # logging.info('SHAPE X TRAIN SENDER: {}'.format(x_train.shape))
         # logging.info('TYPE Y TRAIN SENDER: {}'.format(labels[0]))
-        y_train = labels
-        # y_train = numpy.array(labels)
-        # y_train = torch.from_numpy(y_train)
+        # y_train = labels
+        y_train = numpy.array(labels)
+        y_train = torch.from_numpy(y_train)
 
         super().__init__("Sender", x_train, y_train, x_train, y_train, network_type=network_type, dataset=dataset, rgb_channels=rgb_channels, height=height, width=width)
 
@@ -393,7 +393,7 @@ class Receiver(Client):
             if alpha > 0: # and not y0_label in allocated and not y1_label in allocated:
                 logging.info("Receiver: found hmix(%s, %s, %s) = %s | %s", i, j, alpha, y0_label, y1_label)
                 self.images[c] = bl.hmix(image_i, image_j, alpha)
-                self.labels[c] = [y0_label, y1_label]
+                self.labels[c] = [y0_label.cpu(), y1_label.cpu()]
                 #allocated.append(y0_label)
                 #allocated.append(y1_label)
                 return 1
@@ -408,7 +408,7 @@ class Receiver(Client):
             if alpha > 0: # and not y0_label in allocated and not y1_label in allocated:
                 logging.info("Receiver: found vmix(%s, %s, %s) = %s | %s", i, j, alpha, y0_label, y1_label)
                 self.images[c] = bl.vmix(image_i, image_j, alpha)
-                self.labels[c] = [y0_label, y1_label]
+                self.labels[c] = [y0_label.cpu(), y1_label.cpu()]
                 #allocated.append(y0_label)
                 #allocated.append(y1_label)
                 return 1
@@ -431,7 +431,7 @@ class Receiver(Client):
             if alpha > 0: # and not y0_label in allocated and not y1_label in allocated:
                 logging.info("Receiver: found hmix(%s, %s, %s) = %s | %s", i, j, alpha, y0_label, y1_label)
                 self.images[c] = jbl.hmix(image_i, image_j, alpha)
-                self.labels[c] = [y0_label, y1_label]
+                self.labels[c] = [y0_label.cpu(), y1_label.cpu()]
                 #allocated.append(y0_label)
                 #allocated.append(y1_label)
                 return 1
