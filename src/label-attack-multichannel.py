@@ -377,10 +377,10 @@ class Receiver(Client):
             image_i = bl.linearize(bl.get_image(i))
             image_j = bl.linearize(bl.get_image(j))
 
-            i_label = self.label_predict(create_sample(image_i))
+            i_label = self.label_predict(create_sample(image_i, self.dataset))
 
             imageH = bl.hmix(image_i, image_j, ALPHA)
-            H_label = self.label_predict(create_sample(imageH))
+            H_label = self.label_predict(create_sample(imageH, self.dataset))
 
             alpha, y0_label, y1_label = self.hsearch(image_i, image_j, i_label, H_label, 0, ALPHA)
 
@@ -395,7 +395,7 @@ class Receiver(Client):
                 logging.debug("Receiver: not found for (%s,%s)", i, j)
 
             imageV = bl.vmix(image_i, image_j, ALPHA)
-            V_label = self.label_predict(create_sample(imageV))
+            V_label = self.label_predict(create_sample(imageV, self.dataset))
 
             alpha, y0_label, y1_label = self.vsearch(image_i, image_j, i_label, V_label, 0, ALPHA)
 
@@ -415,12 +415,12 @@ class Receiver(Client):
             image_j = jbl.linearize(jbl.get_image(j))
 
             logging.info('Shape image: {}'.format(image_i.shape))
-            i_label = self.label_predict(create_sample(image_i))
+            i_label = self.label_predict(create_sample(image_i, self.dataset))
 
             imageH = jbl.hmix(image_i, image_j, ALPHA)
             logging.info('Shape image: {}'.format(imageH.shape))
             
-            H_label = self.label_predict(create_sample(imageH))
+            H_label = self.label_predict(create_sample(imageH, self.dataset))
 
             alpha, y0_label, y1_label = self.hsearch(image_i, image_j, i_label, H_label, 0, ALPHA)
 
@@ -435,7 +435,7 @@ class Receiver(Client):
                 logging.debug("Receiver: not found for (%s,%s)", i, j)
 
             imageV = jbl.vmix(image_i, image_j, ALPHA)
-            V_label = self.label_predict(create_sample(imageV))
+            V_label = self.label_predict(create_sample(imageV, self.dataset))
 
             alpha, y0_label, y1_label = self.vsearch(image_i, image_j, i_label, V_label, 0, ALPHA)
 
@@ -465,7 +465,7 @@ class Receiver(Client):
                 return alpha_min, y0_label, y1_label
 
             imageM = bl.hmix(image_i, image_j, (alpha_min + alpha_max) / 2)
-            yM_label = self.label_predict(create_sample(imageM))
+            yM_label = self.label_predict(create_sample(imageM, self.dataset))
             if y0_label != yM_label:
                 return self.hsearch(image_i, image_j, y0_label, yM_label, alpha_min, (alpha_min + alpha_max) / 2)
             else:
@@ -478,7 +478,7 @@ class Receiver(Client):
                 return alpha_min, y0_label, y1_label
 
             imageM = jbl.hmix(image_i, image_j, (alpha_min + alpha_max) / 2)
-            yM_label = self.label_predict(create_sample(imageM))
+            yM_label = self.label_predict(create_sample(imageM, self.dataset))
             if y0_label != yM_label:
                 return self.hsearch(image_i, image_j, y0_label, yM_label, alpha_min, (alpha_min + alpha_max) / 2)
             else:
@@ -498,7 +498,7 @@ class Receiver(Client):
                 return alpha_min, y0_label, y1_label
 
             imageM = bl.vmix(image_i, image_j, (alpha_min + alpha_max) / 2)
-            yM_label = self.label_predict(create_sample(imageM))
+            yM_label = self.label_predict(create_sample(imageM, self.dataset))
             if y0_label != yM_label:
                 return self.vsearch(image_i, image_j, y0_label, yM_label, alpha_min, (alpha_min + alpha_max) / 2)
             else:
@@ -511,7 +511,7 @@ class Receiver(Client):
                 return alpha_min, y0_label, y1_label
 
             imageM = jbl.vmix(image_i, image_j, (alpha_min + alpha_max) / 2)
-            yM_label = self.label_predict(create_sample(imageM))
+            yM_label = self.label_predict(create_sample(imageM, self.dataset))
             if y0_label != yM_label:
                 return self.vsearch(image_i, image_j, y0_label, yM_label, alpha_min, (alpha_min + alpha_max) / 2)
             else:
