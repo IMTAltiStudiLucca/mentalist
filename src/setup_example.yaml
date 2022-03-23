@@ -2,16 +2,16 @@ setup:
   data_path: ""
   n_clients: 10
   learning_rate: 0.01
-  num_of_epochs: 10
+  num_of_epochs: 5
   batch_size: 32
   momentum: 0.9
-  random_clients: 0.01
-  n_of_federated_runs: 10
+  random_clients: 0.5
+  n_of_federated_runs: 200
   federated_runs: 200
   save_dir: '../runs'
-  to_save: 1
+  to_save: 0
   multiprocessing: 0
-  network_type: 'NN'
-  dataset : 'mnist'
-  aggregation: 'krum'
-
+  network_type: 'CNN2'
+  dataset : 'cifar'
+  aggregation: 'average'
+  virtual_clients: 0
