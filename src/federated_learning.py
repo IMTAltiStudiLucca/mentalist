@@ -958,8 +958,16 @@ class Client:
         self.model.train()
         train_loss = 0.0
         correct = 0
+        device = 'cpu'
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
 
+        self.model.to(device)
         for data, target in train_dl:
+            data = data.to(device)
+            target = target.to(device)
             output = self.model(data)
             # logging.debug("N. OF CORRECT INSTANCES: {}".format(correct))
             loss = self.criterion_info(output, target)
@@ -977,8 +985,19 @@ class Client:
         self.model.eval()
         test_loss = 0.0
         correct = 0
+        device = 'cpu'
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
+
+        self.model.to(device)
+
         with torch.no_grad():
             for data, target in test_dl:
+                data = data.to(device)
+                target = target.to(device)
+
                 output = self.model(data)
 
                 test_loss += self.criterion_info(output, target).item()
