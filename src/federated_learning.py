@@ -659,11 +659,17 @@ class Server:
 
     def get_averaged_weights_cnn_2(self):
         status_dict = {}
+        device = 'cpu'
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
         with torch.no_grad():
             for name in self.main_model.state_dict().keys():
                 data = torch.zeros(
-                    size = self.main_model.state_dict()[name].shape)
+                    size = self.main_model.state_dict()[name].shape).to(device)
                 for c in self.selected_clients:
+                    c.model.to(device)
                     m = c.model 
                     data += m.state_dict()[name].data.clone()
                 data = data / len(self.selected_clients)
