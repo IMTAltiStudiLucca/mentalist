@@ -1087,7 +1087,7 @@ class Client:
             #     data = data.reshape(-1, 1, 28, 28)
             # elif self.network_type == 'NN':
             #     data = data.reshape(-1, self.rgb_channels*self.width*self.height)
-            return self.self.model(data)
+            return self.model(data)
 
     def save_model(self, path):
         out_path = os.path.join(path, "model_{}".format(self.id))
