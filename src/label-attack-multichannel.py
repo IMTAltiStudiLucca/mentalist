@@ -135,8 +135,6 @@ class Sender(Client):
         x_train = x_train.astype('float32')
         x_train /= 255
         x_train = torch.from_numpy(x_train).reshape(-1,height,width,rgb_channels)
-        logging.info('SENDER SHAPE X_TRAIN: {}'.format(x_train.shape))
-        logging.info('DATASET PARAMTERS {} {} {}'.format(height,width,rgb_channels))
         y_train = numpy.array(labels)
         y_train = torch.from_numpy(y_train)
 
@@ -157,6 +155,7 @@ class Sender(Client):
         if self.frame_count == 0:
             # x_pred = torch.from_numpy(self.x_train[[0]])
             for c in range(self.n_channels):
+                logging.info('SHAPE CRAFT EXAMPLE TO PREDICT ON SENDER: {}'.format(self.x_train[[c]].shape))
                 self.frame_start[c] = self.label_predict(self.x_train[[c]])
 
                 if self.pattern is None:
