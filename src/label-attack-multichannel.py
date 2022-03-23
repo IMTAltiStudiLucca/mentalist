@@ -446,7 +446,7 @@ class Receiver(Client):
             if alpha > 0: # and not y0_label in allocated and not y1_label in allocated:
                 logging.info("Receiver: found vmix(%s, %s, %s) = %s | %s", i, j, alpha, y0_label, y1_label)
                 self.images[c] = jbl.vmix(image_i, image_j, alpha)
-                self.labels[c] = [y0_label, y1_label]
+                self.labels[c] = [y0_label.cpu(), y1_label.cpu()]
                 #allocated.append(y0_label)
                 #allocated.append(y1_label)
                 return 1
