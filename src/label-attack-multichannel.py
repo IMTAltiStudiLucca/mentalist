@@ -100,9 +100,9 @@ def create_sample(image,dataset):
     x_train /= 255
     x_train_torch = torch.from_numpy(x_train[[0]])
     if dataset == 'cifar':
-        x_train_torch = x_train_torch.reshape(1,32,32,3)
+        x_train_torch = x_train_torch.reshape(1,32,32,3).permute(0, 3, 1, 2)
     elif dataset == 'mninst':
-        x_train_torch = x_train_torch.reshape(1,28,28,1)
+        x_train_torch = x_train_torch.reshape(1,28,28,1).flatten()
     # return x_train[[0]]
     return x_train_torch
 
