@@ -202,7 +202,7 @@ class Sender(Client):
                 logging.debug("Sender: x_train %s", self.x_train[c])
                 # bias injection dataset
 
-                x_train_reshaped, _ = self.reshape_dataset(self.x_train[c], self.x_train[c])
+                # x_train_reshaped, _ = self.reshape_dataset(self.x_train[c], self.x_train[c])
                 """
                 if self.network_type == 'CNN':
                     x_train_reshaped = self.x_train[c].reshape(-1, 1, 28, 28)
