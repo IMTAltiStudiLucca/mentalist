@@ -406,8 +406,11 @@ class Receiver(Client):
             return 0
 
         elif self.dataset == 'cifar':
-            image_i = jbl.linearize(jbl.get_image(i))
-            image_j = jbl.linearize(jbl.get_image(j))
+            # image_i = jbl.linearize(jbl.get_image(i))
+            # image_j = jbl.linearize(jbl.get_image(j))
+            image_i = jbl.get_image(i)
+            image_j = jbl.get_image(j)
+
             logging.info('Shape image: {}'.format(image_i.shape))
             i_label = self.label_predict(create_sample(image_i))
 
