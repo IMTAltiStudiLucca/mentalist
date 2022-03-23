@@ -24,5 +24,5 @@ setup:
   n_Rcal: 1
   n_train_offset: 1
   docker: 0
-  aggregation: 'krum'
+  aggregation: 'average'
   virtual_clients: 0
