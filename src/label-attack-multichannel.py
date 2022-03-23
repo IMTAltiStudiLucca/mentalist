@@ -136,7 +136,7 @@ class Sender(Client):
         x_train /= 255
         x_train = torch.from_numpy(x_train).reshape(-1,height,width,rgb_channels)
         logging.info('SENDER SHAPE X_TRAIN: {}'.format(x_train.shape))
-        
+        logging.info('DATASET PARAMTERS {} {} {}'.format(height,width,rgb_channels))
         y_train = numpy.array(labels)
         y_train = torch.from_numpy(y_train)
 
