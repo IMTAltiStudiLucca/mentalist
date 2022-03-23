@@ -408,7 +408,7 @@ class Receiver(Client):
         elif self.dataset == 'cifar':
             image_i = jbl.linearize(jbl.get_image(i))
             image_j = jbl.linearize(jbl.get_image(j))
-
+            logging.info('image Type: {}'.format(type(image_i)))
             i_label = self.label_predict(create_sample(image_i))
 
             imageH = jbl.hmix(image_i, image_j, ALPHA)
