@@ -134,6 +134,7 @@ class Sender(Client):
         x_train = numpy.array(images)
         x_train = x_train.astype('float32')
         x_train /= 255
+        logging.info('SENDER SHAPE X_TRAIN: {}'.format(x_train.shape))
         x_train = torch.from_numpy(x_train)
         y_train = numpy.array(labels)
         y_train = torch.from_numpy(y_train)
@@ -414,11 +415,9 @@ class Receiver(Client):
             image_i = jbl.linearize(jbl.get_image(i))
             image_j = jbl.linearize(jbl.get_image(j))
 
-            logging.info('Shape image: {}'.format(image_i.shape))
             i_label = self.label_predict(create_sample(image_i, self.dataset))
 
             imageH = jbl.hmix(image_i, image_j, ALPHA)
-            logging.info('Shape image: {}'.format(imageH.shape))
             
             H_label = self.label_predict(create_sample(imageH, self.dataset))
 
