@@ -158,7 +158,7 @@ def get_image(i):
     else:
         fname = 'data_batch_' + str(findex)
 
-    f = open('../data/cifar/' + fname, 'rb')
+    f = open('../../../data/cifar/' + fname, 'rb')
 
     data_dict = pickle.load(f, encoding='bytes')
 
