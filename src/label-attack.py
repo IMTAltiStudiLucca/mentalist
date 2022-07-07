@@ -18,34 +18,6 @@ import yaml
 import os
 import subprocess
 
-
-# Just a 8 (n. 404 in MNIST)
-ORIGINAL = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 5, 31, 130, 222, 255, 255, 154, 86, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            2, 11, 101, 253, 244, 241, 241, 244, 253, 213, 136, 84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 19, 92,
-            145, 200, 19, 111, 33, 0, 0, 33, 217, 253, 253, 154, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 242, 241,
-            81, 55, 5, 8, 0, 0, 0, 0, 81, 253, 241, 154, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 253, 253, 191,
-            172, 95, 16, 0, 0, 0, 97, 253, 118, 135, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 93, 168, 221, 253,
-            235, 101, 38, 9, 66, 236, 253, 37, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 108, 218, 150,
-            253, 188, 174, 239, 167, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 119, 253, 253,
-            253, 228, 54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84, 253, 253, 253, 253, 185,
-            8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 50, 139, 158, 191, 191, 241, 253, 196, 114,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 147, 221, 149, 30, 0, 0, 0, 89, 242, 253, 154, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 205, 253, 173, 0, 0, 0, 0, 0, 0, 114, 253, 154, 120, 14, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 126, 253, 183, 17, 0, 0, 0, 0, 0, 0, 17, 224, 185, 237, 18, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 16, 236, 227, 16, 0, 0, 0, 0, 0, 0, 0, 0, 217, 253, 253, 122, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 65, 253, 176, 0, 0, 0, 0, 0, 0, 0, 0, 0, 171, 253, 253, 141, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 143,
-            253, 220, 37, 0, 0, 0, 0, 0, 0, 0, 0, 142, 253, 253, 33, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 92, 253, 253,
-            220, 88, 0, 0, 0, 0, 0, 34, 209, 250, 253, 157, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 102, 185, 158,
-            250, 150, 112, 112, 112, 148, 241, 253, 212, 196, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 5, 20,
-            155, 253, 253, 253, 253, 253, 216, 135, 25, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 30,
-            129, 129, 129, 129, 149, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
 SEARCH_THREASHOLD = 1 / (28 * 28)
 
 #NTRAIN = 1  # rounds of training
@@ -158,7 +130,7 @@ def create_sample(image):
     return torch.from_numpy(x_train[[0]])
 
 
-class ReceiverState(enum.Enum):
+class MindReaderState(enum.Enum):
     Crafting = 1
     Calibrating = 2
     Ready = 3
@@ -167,14 +139,14 @@ class ReceiverState(enum.Enum):
 
 class Sender(Client):
 
-    def __init__(self, receiverImage, y_train, frame, pattern, network_type):
+    def __init__(self, readerImage, y_train, frame, pattern, network_type):
         self.bit = None
         self.sent = False
         self.frame_count = -1
         self.frame = frame
         self.pattern = pattern
         self.frame_start = None
-        x_train = numpy.array([receiverImage, receiverImage])
+        x_train = numpy.array([readerImage, readerImage])
         x_train = x_train.astype('float32')
         x_train /= 255
         super().__init__("Sender", x_train, y_train, x_train, y_train, network_type=network_type)
@@ -241,9 +213,9 @@ class Sender(Client):
             # do nothing, prediction should stay unchanged
 
 
-class Receiver(Client):
+class MindReader(Client):
 
-    def __init__(self, oImage,network_type):
+    def __init__(self, oImage, network_type):
         self.bit = None
         self.original = oImage
         self.image = None
@@ -252,40 +224,40 @@ class Receiver(Client):
         self.frame_count = 0
         self.frame_start = 0
         self.frame_end = 0
-        self.state = ReceiverState.Crafting
+        self.state = MindReaderState.Crafting
         x_train = numpy.array([])
         y_train = numpy.array([])
         x_train = x_train.astype('float32')
-        super().__init__("Receiver", x_train, y_train, x_train, y_train,network_type=network_type)
+        super().__init__("MindReader", x_train, y_train, x_train, y_train,network_type=network_type)
 
     def call_training(self, n_of_epoch):
-        logging.debug("Receiver: call_training()")
+        logging.debug("MindReader: call_training()")
 
-        if self.state == ReceiverState.Calibrating:
+        if self.state == MindReaderState.Calibrating:
             self.selection_count += 1
-            logging.info("Receiver: selected %s times", self.selection_count)
+            logging.info("MindReader: selected %s times", self.selection_count)
             if self.selection_count > NSELECTION:
-                self.state = ReceiverState.Ready
+                self.state = MindReaderState.Ready
         else:
             pass
 
     # Covert channel receive
     def update_model_weights(self, main_model):
-        logging.debug("Receiver: update_model_weights()")
+        logging.debug("MindReader: update_model_weights()")
         super().update_model_weights(main_model)
 
-        logging.debug("Receiver: frame_count = %s", self.frame_count)
+        logging.debug("MindReader: frame_count = %s", self.frame_count)
 
-        if self.state == ReceiverState.Crafting:
+        if self.state == MindReaderState.Crafting:
             self.craft()
-        elif self.state == ReceiverState.Calibrating:
+        elif self.state == MindReaderState.Calibrating:
             self.calibrate()
-        else:  # self.state == ReceiverState.Transmitting:
+        else:  # self.state == MindReaderState.Transmitting:
             self.read_from_model()
 
     def label_predict(self, x_pred):
         prediction = self.predict(x_pred)
-        logging.debug("Receiver: prediction %s", prediction)
+        logging.debug("MindReader: prediction %s", prediction)
         # TODO: must return max element only
         return torch.argmax(prediction)
 
@@ -296,16 +268,16 @@ class Receiver(Client):
 
         if self.frame_count == 0:
             self.frame_start = pred
-            logging.info("Receiver: frame starts with = %s", pred)
+            logging.info("MindReader: frame starts with = %s", pred)
         elif self.frame_count == self.frame - 1:
             self.frame_end = pred
-            logging.info("Receiver: frame ends with = %s", pred)
+            logging.info("MindReader: frame ends with = %s", pred)
 
             if self.frame_start == self.frame_end:
                 self.bit = 0
             else:
                 self.bit = 1
-            logging.info("Receiver: RECEIVED: %s", self.bit)
+            logging.info("MindReader: RECEIVED: %s", self.bit)
         else:
             pass
 
@@ -325,7 +297,7 @@ class Receiver(Client):
 
         alpha, y0_label, y1_label = self.search(yB_label, yT_label, 0, ALPHA)
 
-        logging.info("Receiver: found edge cut alpha = %s, y0 = %s, y1 = %s", alpha, y0_label, y1_label)
+        logging.info("MindReader: found edge cut alpha = %s, y0 = %s, y1 = %s", alpha, y0_label, y1_label)
 
         self.image = cancelFromLeft(self.original, alpha)
         self.x_train = numpy.array([self.image, self.image])
@@ -334,9 +306,9 @@ class Receiver(Client):
         self.x_train /= 255
 
         if self.frame < 1:
-            self.state = ReceiverState.Calibrating
+            self.state = MindReaderState.Calibrating
         else:
-            self.state = ReceiverState.Ready
+            self.state = MindReaderState.Ready
 
     def search(self, y0_label, y1_label, alpha_min, alpha_max):
 
@@ -498,27 +470,27 @@ def main():
     setup.run(federated_runs=NTRAIN)
     # setup.load("...")
 
-    # 4. create Receiver
-    receiver = Receiver(ORIGINAL, network_type=setup_env.network_type)
-    setup.add_clients(receiver)
-    log_event(observer.x, 'Receiver added')
+    # 4. create MindReader
+    reader = MindReader(ORIGINAL, network_type=setup_env.network_type)
+    setup.add_clients(reader)
+    log_event(observer.x, 'MindReader added')
 
     # 5. compute channel baseline
-    # baseline = receiver.compute_baseline()
-    while receiver.state != ReceiverState.Ready or receiver.frame_count != 0:
+    # baseline = reader.compute_baseline()
+    while reader.state != MindReaderState.Ready or reader.frame_count != 0:
         setup.run(federated_runs=1)
         # pred = global_bias_prediction(setup.server, observer)
         # logging.info("SERVER: global prediction = %s", pred)
 
-    logging.info("Attacker: ready to transmit with frame size %s", receiver.frame)
+    logging.info("Attacker: ready to transmit with frame size %s", reader.frame)
 
     # 6. create sender
-    sender = Sender(receiver.image, receiver.y_train, receiver.frame, setup_env.pattern, network_type=setup_env.network_type)
+    sender = Sender(reader.image, reader.y_train, reader.frame, setup_env.pattern, network_type=setup_env.network_type)
     setup.add_clients(sender)
     log_event(observer.x, 'Sender added')
-    observer.set_frame(receiver.frame)
+    observer.set_frame(reader.frame)
 
-    observer.set_sample(create_sample(receiver.image))
+    observer.set_sample(create_sample(reader.image))
 
     # 7. perform channel calibration
 
@@ -527,8 +499,8 @@ def main():
     error_rate = 0
     for r in range(NTRANS):
         logging.info("Attacker: starting transmission frame")
-        setup.run(federated_runs=receiver.frame)
-        check = check_transmission_success(sender, receiver)
+        setup.run(federated_runs=reader.frame)
+        check = check_transmission_success(sender, reader)
         if  check:
             successful_transmissions += 1
         else:

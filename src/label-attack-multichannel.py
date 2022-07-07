@@ -313,7 +313,7 @@ class Receiver(Client):
     def read_from_model(self):
 
         for c in range(self.n_channels):
-            x_pred = create_sample(self.images[c],self.dataset)            
+            x_pred = create_sample(self.images[c],self.dataset)
             # x_train = numpy.array([self.images[c]])
             # x_train = x_train.astype('float32')
             # x_train /= 255
@@ -424,7 +424,7 @@ class Receiver(Client):
             i_label = self.label_predict(create_sample(image_i, self.dataset))
 
             imageH = jbl.hmix(image_i, image_j, ALPHA)
-            
+
             H_label = self.label_predict(create_sample(imageH, self.dataset))
 
             alpha, y0_label, y1_label = self.hsearch(image_i, image_j, i_label, H_label, 0, ALPHA)
@@ -620,7 +620,7 @@ class Setup_env:
             self.width = 32
             self.height = 32
             self.rgb_channels = 3
-        else: 
+        else:
             logging.error('Dataset not implemented yet!')
 
         if "docker" in self.settings['setup'].keys():
@@ -688,8 +688,8 @@ def main():
     setup = Setup(args.conf_file)
 
     # 2.2 add observer
-    observer = Observer(network_type=setup_env.network_type, 
-                        dataset=setup_env.dataset, rgb_channels = setup_env.rgb_channels, 
+    observer = Observer(network_type=setup_env.network_type,
+                        dataset=setup_env.dataset, rgb_channels = setup_env.rgb_channels,
                          height = setup_env.height, width = setup_env.width)
     setup.add_clients(observer)
 
@@ -699,7 +699,7 @@ def main():
 
     # 4. create Receiver
     receiver = Receiver(setup_env.n_channels,setup_env.frame_size,network_type = setup_env.network_type,
-                         dataset=setup_env.dataset, rgb_channels = setup_env.rgb_channels, 
+                         dataset=setup_env.dataset, rgb_channels = setup_env.rgb_channels,
                          height = setup_env.height, width = setup_env.width)
     setup.add_clients(receiver)
     log_event('Receiver added')
@@ -715,7 +715,7 @@ def main():
 
     # 6. create sender
     sender = Sender(receiver.images, receiver.labels, receiver.n_channels, receiver.frame, setup_env.pattern, network_type=setup_env.network_type,
-                    dataset=setup_env.dataset, rgb_channels = setup_env.rgb_channels, 
+                    dataset=setup_env.dataset, rgb_channels = setup_env.rgb_channels,
                          height = setup_env.height, width = setup_env.width
                     )
     setup.add_clients(sender)
